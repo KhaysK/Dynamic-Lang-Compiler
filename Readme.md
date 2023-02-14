@@ -49,7 +49,7 @@
    var isYNull = (y is null); # isYNull = false
    ```
 
-2.  I/O
+2. I/O
 
    ```nnlang
    # we can read variables from standard input
@@ -83,6 +83,70 @@
    then
    	print "a is greated than b and c"
    end
+   ```
+
+4. loops
+
+   ```nnlang
+   # while loops
+   var t = 0;
+   while t < 10
+   loop
+   	print t
+   	t += 1
+   end
+   
+   # for loop
+   for var i = 0; i < 10; i += 1
+   loop
+   	print i * i
+   end
+   ```
+
+5. functions
+
+   ```nlang
+   # functions are objects too
+   
+   var f = func(a, b) begin
+   	var c = a + b;
+   	return c;
+   end
+   
+   print f(10, 20) # 30
+   ```
+
+6. arrays
+
+   ```nnlang
+   # arrays behave like `real` associative array with integers as keys
+   # also arrays are indexed starting from 1
+   
+   var arr = [];
+   arr[1] = "hi";
+   arr[15] = 3.14;
+   
+   print arr; # {1: "hi", 15: 3.14}
+   
+   ```
+
+7.  tuples
+
+   ```nnlang
+   # tuples behave like structures
+   
+   var t = {a=10, b=20};
+   t.a += 10;
+   print t; # {a=20, b=20}
+   
+   # to change tuple structure we should add new tuple to it
+   t += {a=10, c=30};
+   print t; # {a=30, b=20, c=30}
+   
+   # we can access tuple elements by order (starting from 1)
+   print t.1; # will print t.a value
+   print t.2; # will print t.b value
+   print t.3; # will print t.c value
    ```
 
    
