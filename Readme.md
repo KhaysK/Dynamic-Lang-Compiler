@@ -108,7 +108,7 @@
    ```nlang
    # functions are objects too
    
-   var f = func(a, b) begin
+   var f = func(a, b) is
    	var c = a + b;
    	return c;
    end
