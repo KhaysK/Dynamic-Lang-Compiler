@@ -53,9 +53,10 @@
 
    ```nnlang
    # we can read variables from standard input
-   var a = readInt,
-   	b = readRead,
-   	c = readString; # readString reads the whole line
+   var a, b, c;
+   readInt a;
+   readReal b;
+   readString c;
    
    # we can print variable (or expression)
    print a;
@@ -66,7 +67,10 @@
 3. `if` statement
 
    ```nnlang
-   var a = readInt, b = readInt, c = readReal;
+   var a, b, c;
+   readInt a;
+   readInt b;
+   readReal c;
    
    # simple if statement
    # available relations: <, >, <=, >=, ==, !=
@@ -108,7 +112,7 @@
    ```nlang
    # functions are objects too
    
-   var f = func(a, b) is
+   var f = func(a, b) do
    	var c = a + b;
    	return c;
    end
