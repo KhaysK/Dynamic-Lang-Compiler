@@ -104,7 +104,7 @@ public:
             }
         }
 
-        tokens.emplace_back(TokenType::EOF_, "");
+        tokens.emplace_back(TokenType::EOF_, "", curentLine);
         return tokens;
     }
 
