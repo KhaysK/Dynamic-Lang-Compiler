@@ -4,8 +4,8 @@
 
 using namespace std;
 
-enum class TokenType {
-    IDENTIFIER,
+enum TokenType : int {
+    IDENTIFIER = 0,
     NUMBER,
     STRING,
     BOOL,
@@ -23,6 +23,27 @@ enum class TokenType {
     LPAREN,
     RPAREN,
     EOF_
+};
+
+const string TokenTypeStr[] = {
+    [TokenType::IDENTIFIER] = "IDENTIFIER",
+    [TokenType::NUMBER] = "NUMBER",
+    [TokenType::STRING] = "STRING",
+    [TokenType::BOOL] = "BOOL",
+    [TokenType::VAR] = "VAR",
+    [TokenType::CONST] = "CONST",
+    [TokenType::IS] = "IS",
+    [TokenType::NULL_] = "NULL_",
+    [TokenType::COMMA] = "COMMA",
+    [TokenType::SEMICOLON] = "SEMICOLON",
+    [TokenType::ASSIGN] = "ASSIGN",
+    [TokenType::PLUS] = "PLUS",
+    [TokenType::MINUS] = "MINUS",
+    [TokenType::MUL] = "MUL",
+    [TokenType::DIV] = "DIV",
+    [TokenType::LPAREN] = "LPAREN",
+    [TokenType::RPAREN] = "RPAREN",
+    [TokenType::EOF_] = "EOF_",
 };
 
 class Token {
@@ -172,34 +193,38 @@ TokenType getType(string identifier) {
 
 int main() {
 string input = R"(
-var x = 1.23; 
+# btw, this is comment ;)
 
-x = "Hello"; 
+# create mutable variable
+var x = 1.23;
 
+# reassign mutable variable to another type
+x = "Hello"; # OK
 
+# assign multiple variables in one line
 var a = 30, b = false;
 
-
+# can create variable via expression
 var g = 10, h = 20;
 var j = g * h / 2;
 
+# initialize empty variable (it has special type `null`)
+var c; # c is null
 
-var c; 
-
-
+# create literal variable 
 const y = "This is string";
 
+# can check type of variable
+var isYString = (y is string); # isYString = true
 
-var isYString = (y is string); 
-
-
-var isYNull = (y is null);)";
+# can check for null
+var isYNull = (y is null); # isYNull = false)";
 
 Lexer lexer(input);
 vector<Token> tokens = lexer.tokenize();
 
 for (const Token& token : tokens) {
-    cout << "(" << static_cast<int>(token.getType()) << ", " << token.getLexeme() << ")" << endl;
+    cout << "(" << TokenTypeStr[token.getType()] << ", " << token.getLexeme() << ")" << endl;
 }
 
 return 0;
