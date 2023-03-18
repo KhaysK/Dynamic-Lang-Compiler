@@ -18,7 +18,6 @@ enum TokenType : int {
     SEMICOLON,
     ASSIGN,
     PLUS,
-    PLUS_EQUAL,
     MINUS,
     MUL,
     DIV,
@@ -38,8 +37,8 @@ enum TokenType : int {
     END,
     LESS, 
     LESS_E,
-    GRATER,
-    GRATER_E,
+    GREATER,
+    GREATER_E,
     EQUAL,
     NOT_EQUAL, 
     NOT,
@@ -69,7 +68,6 @@ const string TokenTypeStr[] = {
     [TokenType::SEMICOLON] = "SEMICOLON",
     [TokenType::ASSIGN] = "ASSIGN",
     [TokenType::PLUS] = "PLUS",
-    [TokenType::PLUS_EQUAL] = "PLUS_EQUAL",
     [TokenType::MINUS] = "MINUS",
     [TokenType::MUL] = "MUL",
     [TokenType::DIV] = "DIV",
@@ -89,8 +87,8 @@ const string TokenTypeStr[] = {
     [TokenType::END] = "END",
     [TokenType::LESS] = "LESS",
     [TokenType::LESS_E] = "LESS_E",
-    [TokenType::GRATER] = "GRATER",
-    [TokenType::GRATER_E] = "GRATER_E",
+    [TokenType::GREATER] = "GREATER",
+    [TokenType::GREATER_E] = "GREATER_E",
     [TokenType::EQUAL] = "EQUAL",
     [TokenType::NOT_EQUAL] = "NOT_EQUAL",
     [TokenType::NOT] = "NOT",
@@ -177,10 +175,10 @@ class Lexer {
                     }
                 } else if (c == '>') {
                     if (input[i + 1] == '=') {
-                        tokens.emplace_back(TokenType::GRATER_E, ">=", curentLine);
+                        tokens.emplace_back(TokenType::GREATER_E, ">=", curentLine);
                         i += 2;
                     } else {
-                        tokens.emplace_back(TokenType::GRATER, ">", curentLine);
+                        tokens.emplace_back(TokenType::GREATER, ">", curentLine);
                         i++;
                     }
                 } else if (c == '!') {
@@ -192,13 +190,8 @@ class Lexer {
                         i++;
                     }
                 } else if (c == '+') {
-                    if (input[i + 1] == '=') {
-                        tokens.emplace_back(TokenType::PLUS_EQUAL, "+=", curentLine);
-                        i += 2;
-                    } else{
-                        tokens.emplace_back(TokenType::PLUS, "+", curentLine);
-                        i++;
-                    }
+                    tokens.emplace_back(TokenType::PLUS, "+", curentLine);
+                    i++;
                 } else if (c == '-') {
                     tokens.emplace_back(TokenType::MINUS, "-", curentLine);
                     i++;
@@ -254,12 +247,10 @@ class Lexer {
 
         string readNumber(size_t& i) {
             size_t start = i;
-            bool isDotAppear = false;
+            bool isFloat = false;
             while (i < input.length() && (isdigit(input[i]) || input[i] == '.')) {
-                if(input[i] == '.') {
-                    isDotAppear = true;
-                    i++;
-                } else if(input[i] == '.' && isDotAppear) break;
+                if(input[i] == '.' && isFloat) break;
+                else if(input[i] == '.') isFloat = true;
                 i++;
             }
             return input.substr(start, i - start);
@@ -347,21 +338,29 @@ class Lexer {
 int main() {
 string input = R"(
 # btw, this is comment ;)
+
 # create mutable variable
 var x = 1.23;
+
 # reassign mutable variable to another type
 x = "Hello"; # OK
+
 # assign multiple variables in one line
 var a = 30, b = false;
+
 # can create variable via expression
 var g = 10, h = 20;
 var j = g * h / 2;
+
 # initialize empty variable (it has special type `null`)
 var c; # c is null
+
 # create literal variable 
 const y = "This is string";
+
 # can check type of variable
 var isYString = (y is string); # isYString = true
+
 # can check for null
 var isYNull = (y is null); # isYNull = false)";
 
