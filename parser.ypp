@@ -1,0 +1,198 @@
+%require "3.8.2"
+%language "C++"
+%define api.value.type variant
+%define api.token.constructor
+%define parse.assert
+%define parse.trace
+
+%code requires
+{
+    #pragma once
+    #include <iostream>
+    #include <string>
+		#define YYDEBUG 1
+    
+    // forward decleration (1)
+    namespace yy
+    {
+        class parser;
+    }
+}
+%code
+{
+    namespace yy
+    {
+        parser::symbol_type yylex(); // override (2)
+        // no need to override the error function because it is already waiting for our implementation (3)
+    }
+
+    extern yy::parser::symbol_type get_next_token();
+}
+
+%token IDENTIFIER
+%token NUMBER
+%token STRING
+%token BOOL
+%token VAR
+%token CONST
+%token IS
+%token NULL_
+%token COMMA
+%token SEMICOLON
+%token ASSIGN
+%token PLUS
+%token MINUS
+%token MUL
+%token DIV
+%token LPAREN
+%token RPAREN
+%token EOF_
+%token LBRACKET
+%token RBRACKET
+%token LBRACE
+%token RBRACE
+%token READ_INT
+%token READ_REAL
+%token READ_STRING
+%token PRINT
+%token IF
+%token THEN
+%token END
+%token LESS
+%token LESS_E
+%token GREATER
+%token GREATER_E
+%token EQUAL
+%token NOT_EQUAL
+%token NOT
+%token WHILE_L
+%token FOR_L
+%token LOOP
+%token FUNC
+%token RETURN
+%token DO
+%token DOT_OP
+%token INVALID
+%token AND
+%token OR
+%token XOR
+
+%type<std::string> IDENTIFIER
+%type<std::string> NUMBER
+%type<std::string> STRING
+
+%%
+
+Program: 
+| Program declaration assign
+	;
+
+unary_operator
+  : AND
+  | MUL
+  | PLUS
+  | MINUS
+  | NOT
+	;
+
+
+
+/* VARIABLE DECLARATION */
+
+
+declaration
+  : type_specifier IDENTIFIER SEMICOLON { std::cout << "var x;" << '\n'; }
+	| type_specifier assign_list SEMICOLON { std::cout << "var x = mem;" << '\n'; }
+  ;
+
+
+assign_list
+	: assign_list COMMA assign_list
+	| assign COMMA assign_list
+	| assign
+	;
+
+assign
+	: IDENTIFIER ASSIGN variable_specifier
+	| IDENTIFIER ASSIGN logical_expression
+	| IDENTIFIER ASSIGN expression
+	;
+
+type_specifier
+  : VAR
+  | CONST
+  ;
+
+variable_specifier
+	: NULL_
+	| NUMBER
+	| STRING
+	| BOOL
+	;
+
+
+
+/* CONDITIONAL EXPRESSION */
+
+conditional_expression
+	: logical_or_expression
+	;
+
+logical_or_expression
+	: logical_and_expression
+	| logical_or_expression OR logical_and_expression
+	;
+
+logical_and_expression
+	: equality_expression
+	| logical_and_expression AND equality_expression
+	;
+
+equality_expression
+	: relational_expression
+	| equality_expression EQUAL relational_expression
+	| equality_expression NOT_EQUAL relational_expression
+	;
+
+relational_expression
+	: additive_expression
+	| relational_expression LESS additive_expression
+	| relational_expression GREATER additive_expression
+	| relational_expression LESS_E additive_expression
+	| relational_expression GREATER_E additive_expression
+	;
+
+additive_expression
+	: multiplicative_expression
+	| additive_expression PLUS multiplicative_expression
+	| additive_expression MINUS multiplicative_expression
+	;
+
+multiplicative_expression
+	: unary_expression
+	| multiplicative_expression '
+
+
+
+/* EXPRESSION */
+
+assignment_expression
+	: conditional_expression
+	| unary_expression ASSIGN assignment_expression
+	;
+
+expression
+	: assignment_expression
+	| expression COMMA assignment_expression
+	;
+
+
+%%
+
+namespace yy
+{
+    void parser::error(const std::string& msg) //(3+)
+    {
+        std::cout<< "";
+    }
+}
