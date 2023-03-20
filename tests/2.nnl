@@ -1,0 +1,10 @@
+# we can read variables from standard input
+var a, b, c;
+readInt a;
+readReal b;
+readString c;
+
+# we can print variable (or expression)
+print a;
+print a + b; # here implicit conversion to `real` happens
+print "I can concatenate strings! look: " + c;

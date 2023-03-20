@@ -1,0 +1,14 @@
+# tuples behave like structures
+
+var t = {a=10, b=20};
+t.a += 10;
+print t; # {a=20, b=20}
+
+# to change tuple structure we should add new tuple to it
+t += {a=10, c=30};
+print t; # {a=30, b=20, c=30}
+
+# we can access tuple elements by order (starting from 1)
+print t.1; # will print t.a value
+print t.2; # will print t.b value
+print t.3; # will print t.c value
