@@ -1,3 +1,4 @@
 .vscode
 parser.tab.*
 compiler
+lexer

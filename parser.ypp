@@ -11,6 +11,8 @@
     #include <iostream>
     #include <string>
 		#define YYDEBUG 1
+
+		using namespace std;
     
     // forward decleration (1)
     namespace yy
@@ -29,14 +31,17 @@
     extern yy::parser::symbol_type get_next_token();
 }
 
-%token IDENTIFIER
-%token NUMBER
-%token STRING
+%token <std::string> IDENTIFIER
+%token <std::string> NUMBER
+%token <std::string> STRING
 %token BOOL
 %token VAR
 %token CONST
 %token IS
-%token NULL_
+%token NUMBER_TYPE
+%token STRING_TYPE
+%token BOOL_TYPE
+%token NULL_TYPE
 %token COMMA
 %token SEMICOLON
 %token ASSIGN
@@ -56,6 +61,7 @@
 %token READ_STRING
 %token PRINT
 %token IF
+%token ELSE
 %token THEN
 %token END
 %token LESS
@@ -77,122 +83,179 @@
 %token OR
 %token XOR
 
-%type<std::string> IDENTIFIER
-%type<std::string> NUMBER
-%type<std::string> STRING
+%left AND OR
+%left NOT
+%nonassoc LESS GREATER LESS_E GREATER_E EQUAL
+%left MINUS PLUS
+%left MUL DIV
 
 %%
 
-Program: 
-| Program declaration assign
+program: /* empty */
+	| block EOF_
 	;
 
-unary_operator
-  : AND
-  | MUL
-  | PLUS
-  | MINUS
-  | NOT
+block
+	: statement
+	| operation
+	| block statement {  }
+	| block operation
+	;
+
+statement
+	: assignment
+	| if_statement
+	| loop_statement
+	| function_call
 	;
 
 
-
-/* VARIABLE DECLARATION */
-
-
-declaration
-  : type_specifier IDENTIFIER SEMICOLON { std::cout << "var x;" << '\n'; }
-	| type_specifier assign_list SEMICOLON { std::cout << "var x = mem;" << '\n'; }
-  ;
-
-
-assign_list
-	: assign_list COMMA assign_list
-	| assign COMMA assign_list
-	| assign
+assignment
+	: list_assignemtns SEMICOLON { std::cout << "reassign;" << "\n"; }
+	| declaration_specifics list_assignemtns SEMICOLON { std::cout << "declaration;" << '\n'; }
+	| declaration_specifics IDENTIFIER ASSIGN function_declaration { cout << "declaration;\n"; }
 	;
 
-assign
-	: IDENTIFIER ASSIGN variable_specifier
-	| IDENTIFIER ASSIGN logical_expression
+declaration_specifics
+	: VAR
+	| CONST;
+
+list_assignemtns
+	: list_assignemtns COMMA assignment_part
+	| assignment_part { cout << "assignment right part\n"; }
+	;
+
+assignment_part
+	: IDENTIFIER ASSIGN assignment_value
 	| IDENTIFIER ASSIGN expression
+	| IDENTIFIER /* empty */
 	;
 
-type_specifier
-  : VAR
-  | CONST
-  ;
-
-variable_specifier
-	: NULL_
+assignment_value
+	: NULL_TYPE
+	| BOOL
+	| LBRACKET RBRACKET
 	| NUMBER
 	| STRING
-	| BOOL
+	| function_call
+	| LBRACE list_assignemtns RBRACE
+	| LBRACKET function_params RBRACKET
 	;
 
-
-
-/* CONDITIONAL EXPRESSION */
-
-conditional_expression
-	: logical_or_expression
+tuple_element
+	: IDENTIFIER DOT_OP IDENTIFIER
+	| IDENTIFIER DOT_OP NUMBER
 	;
 
-logical_or_expression
-	: logical_and_expression
-	| logical_or_expression OR logical_and_expression
-	;
-
-logical_and_expression
-	: equality_expression
-	| logical_and_expression AND equality_expression
-	;
-
-equality_expression
-	: relational_expression
-	| equality_expression EQUAL relational_expression
-	| equality_expression NOT_EQUAL relational_expression
-	;
-
-relational_expression
-	: additive_expression
-	| relational_expression LESS additive_expression
-	| relational_expression GREATER additive_expression
-	| relational_expression LESS_E additive_expression
-	| relational_expression GREATER_E additive_expression
-	;
-
-additive_expression
-	: multiplicative_expression
-	| additive_expression PLUS multiplicative_expression
-	| additive_expression MINUS multiplicative_expression
-	;
-
-multiplicative_expression
-	: unary_expression
-	| multiplicative_expression '
-
-
-
-/* EXPRESSION */
-
-assignment_expression
-	: conditional_expression
-	| unary_expression ASSIGN assignment_expression
+assignment_type
+	: NULL_TYPE
+	| BOOL_TYPE
+	| NUMBER_TYPE
+	| STRING_TYPE
 	;
 
 expression
-	: assignment_expression
-	| expression COMMA assignment_expression
+	: term
+	| expression PLUS term
+	| expression MINUS term
+	| LPAREN expression RPAREN
+	;
+
+term
+	: factor
+	| term MUL factor
+	| term DIV factor
+	;
+
+factor
+	: NUMBER
+	| STRING
+	| BOOL
+	| IDENTIFIER
+	| function_call
+	| tuple_element
+	| IDENTIFIER LBRACKET NUMBER RBRACKET
+	| IDENTIFIER IS assignment_type
 	;
 
 
+operation
+	: keyword expression SEMICOLON { cout << "keyword expression;\n"; }
+	| IDENTIFIER operation_op ASSIGN assignment_value SEMICOLON
+	| tuple_element operation_op ASSIGN assignment_value SEMICOLON
+	| IDENTIFIER LBRACKET NUMBER RBRACKET ASSIGN assignment_value SEMICOLON
+	;
+
+operation_op
+	: PLUS
+	| MINUS
+	| MUL
+	| DIV
+	;
+
+keyword
+	: READ_INT
+	| READ_REAL
+	| READ_STRING
+	| PRINT
+
+if_statement
+	: IF conditional_expression THEN block if_alternatives END
+	;
+
+conditional_expression 
+	: conditional_expression AND conditional_expression
+	| conditional_expression OR conditional_expression
+	| NOT conditional_expression
+	| expression LESS expression { cout << "a < 5\n";}
+	| expression LESS_E expression
+	| expression GREATER expression
+	| expression GREATER_E expression
+	| expression EQUAL expression
+	| expression NOT_EQUAL expression
+	| expression
+	;
+
+if_alternatives
+	: /* empty */
+	| ELSE block
+	| ELSE IF conditional_expression THEN block if_alternatives
+	;
+
+loop_statement
+	: WHILE_L conditional_expression LOOP block END { cout << "while statement;\n"; }
+	| FOR_L assignment conditional_expression SEMICOLON for_expression LOOP block END { cout << "for statement;\n"; }
+	;
+
+for_expression
+	: IDENTIFIER operation_op ASSIGN assignment_value
+	;
+
+function_declaration
+	: FUNC LPAREN function_params RPAREN DO block RETURN expression SEMICOLON END { cout << "function declaration;\n"; }
+
+function_call
+	: IDENTIFIER LPAREN function_params RPAREN { cout << "function call\n"; }
+
+function_params
+	: list_assignemtns
+	| factor_list
+	;
+
+factor_list
+	: factor_list COMMA factor
+	| factor
+	;
+
 %%
+int yywrap() {
+	return 0;
+}
 
 namespace yy
 {
     void parser::error(const std::string& msg) //(3+)
     {
-        std::cout<< "";
+        std::cout<< msg << '\n';
     }
 }

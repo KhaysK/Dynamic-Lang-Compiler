@@ -2,12 +2,12 @@
 var t = 0;
 while t < 10
 loop
-	print t
-	t += 1
+	print t;
+	t += 1;
 end
 
 # for loop
 for var i = 0; i < 10; i += 1
 loop
-	print i * i
+	print i * i;
 end

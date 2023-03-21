@@ -1,21 +1,23 @@
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <regex>
 
 #include "parser.tab.hpp"
 
-using namespace std;
-
 enum TokenType : int {
     IDENTIFIER = 0,
     NUMBER,
+    NUMBER_TYPE,
     STRING,
+    STRING_TYPE,
     BOOL,
+    BOOL_TYPE,
     VAR,
     CONST,
     IS,
-    NULL_,
+    NULL_TYPE,
     COMMA,
     SEMICOLON,
     ASSIGN,
@@ -35,6 +37,7 @@ enum TokenType : int {
     READ_STRING,
     PRINT,
     IF,
+    ELSE,
     THEN,
     END,
     LESS, 
@@ -60,12 +63,15 @@ enum TokenType : int {
 const string TokenTypeStr[] = {
     [TokenType::IDENTIFIER] = "IDENTIFIER",
     [TokenType::NUMBER] = "NUMBER",
+    [TokenType::NUMBER_TYPE] = "NUMBER_TYPE",
     [TokenType::STRING] = "STRING",
+    [TokenType::STRING_TYPE] = "STRING_TYPE",
     [TokenType::BOOL] = "BOOL",
+    [TokenType::BOOL_TYPE] = "BOOL_TYPE",
     [TokenType::VAR] = "VAR",
     [TokenType::CONST] = "CONST",
     [TokenType::IS] = "IS",
-    [TokenType::NULL_] = "NULL_",
+    [TokenType::NULL_TYPE] = "NULL_TYPE",
     [TokenType::COMMA] = "COMMA",
     [TokenType::SEMICOLON] = "SEMICOLON",
     [TokenType::ASSIGN] = "ASSIGN",
@@ -85,6 +91,7 @@ const string TokenTypeStr[] = {
     [TokenType::READ_STRING] = "READ_STRING",
     [TokenType::PRINT] = "PRINT",
     [TokenType::IF] = "IF",
+    [TokenType::ELSE] = "ELSE",
     [TokenType::THEN] = "THEN",
     [TokenType::END] = "END",
     [TokenType::LESS] = "LESS",
@@ -291,7 +298,13 @@ class Lexer {
         } else if (identifier == "const") {
             return TokenType::CONST;
         } else if (identifier == "null") {
-            return TokenType::NULL_;
+            return TokenType::NULL_TYPE;
+        } else if (identifier == "string") {
+            return TokenType::STRING_TYPE;
+        } else if (identifier == "number") {
+            return TokenType::NUMBER_TYPE;
+        } else if (identifier == "bool") {
+            return TokenType::BOOL_TYPE;
         } else if (identifier == "true" || identifier == "false") {
             return TokenType::BOOL;
         } else if (identifier == "is") {
@@ -306,6 +319,8 @@ class Lexer {
             return TokenType::PRINT;
         } else if (identifier == "if") {
             return TokenType::IF;
+        } else if (identifier == "else") {
+            return TokenType::ELSE;
         } else if (identifier == "then") {
             return TokenType::THEN;
         } else if (identifier == "end") {
@@ -344,6 +359,7 @@ yy::parser::symbol_type get_next_token() {
     while (idx < tokens.size()) {
         const Token& token = tokens[idx];
         TokenType type = token.getType();
+        cout << TokenTypeStr[type] << '\n';
         idx++;
         switch (type)
         {
@@ -355,12 +371,24 @@ yy::parser::symbol_type get_next_token() {
             return yy::parser::make_NUMBER(token.getLexeme());
             break;
 
+        case TokenType::NUMBER_TYPE:
+            return yy::parser::make_NUMBER_TYPE();
+            break;
+
         case TokenType::STRING:
             return yy::parser::make_STRING(token.getLexeme());
             break;
         
+        case TokenType::STRING_TYPE:
+            return yy::parser::make_STRING_TYPE();
+            break;
+        
         case TokenType::BOOL:
             return yy::parser::make_BOOL();
+            break;
+        
+        case TokenType::BOOL_TYPE:
+            return yy::parser::make_BOOL_TYPE();
             break;
         
         case TokenType::VAR:
@@ -375,8 +403,8 @@ yy::parser::symbol_type get_next_token() {
             return yy::parser::make_IS();
             break;
         
-        case TokenType::NULL_:
-            return yy::parser::make_NULL_();
+        case TokenType::NULL_TYPE:
+            return yy::parser::make_NULL_TYPE();
             break;
         
         case TokenType::COMMA:
@@ -419,6 +447,10 @@ yy::parser::symbol_type get_next_token() {
             return yy::parser::make_LBRACKET();
             break;
         
+        case TokenType::RBRACKET:
+            return yy::parser::make_RBRACKET();
+            break;
+        
         case TokenType::LBRACE:
             return yy::parser::make_LBRACE();
             break;
@@ -445,6 +477,10 @@ yy::parser::symbol_type get_next_token() {
         
         case TokenType::IF:
             return yy::parser::make_IF();
+            break;
+        
+        case TokenType::ELSE:
+            return yy::parser::make_ELSE();
             break;
         
         case TokenType::THEN:
@@ -536,40 +572,21 @@ yy::parser::symbol_type get_next_token() {
 }
 
 int main() {
-    string input = R"(
-        # btw, this is comment ;)
+    string filename = "tests/6.nnl";
 
-        # create mutable variable
-        var x = 1.23;
+    ifstream file(filename);
+    string line;
+    string input;
 
-        # reassign mutable variable to another type
-        x = "Hello"; # OK
+    while (getline(file, line)) {
+        input += line + '\n';
+    }
 
-        # assign multiple variables in one line
-        var a = 30, b = false;
+    cout << input << '\n';
 
-        # can create variable via expression
-        var g = 10, h = 20;
-        var j = g * h / 2;
+    file.close();
 
-        # initialize empty variable (it has special type `null`)
-        var c; # c is null
-
-        # create literal variable 
-        const y = "This is string";
-
-        # can check type of variable
-        var isYString = (y is string); # isYString = true
-
-        # can check for null
-        var isYNull = (y is null); # isYNull = false)";
-    
-    string lol = R"(
-        var x = 5;
-        var c;
-    )";
-
-    Lexer lexer(lol);
+    Lexer lexer(input);
     tokens = lexer.tokenize();
 
     yy::parser p;

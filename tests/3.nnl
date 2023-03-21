@@ -7,14 +7,24 @@ readReal c;
 # available relations: <, >, <=, >=, ==, !=
 if a <= b
 then
-	print "a is greated than b"
+	print "a is greated than b";
 else
-	print "a is less than b"
+	print "a is less than b";
 end
 	
 # combined if statement
 # available operators: and, or, xor
 if a > b and a > c
 then
-	print "a is greated than b and c"
+	print "a is greated than b and c";
+end
+
+if a < 5
+then
+	print "a is less then 5";
+else if a > 5
+then
+	print "a is more than 5";
+else
+	print "a is 5";
 end

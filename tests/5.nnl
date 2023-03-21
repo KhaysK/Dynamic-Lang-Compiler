@@ -5,4 +5,4 @@ var f = func(a, b) do
 	return c;
 end
 
-print f(10, 20) # 30
+print f(10, 20); # 30
