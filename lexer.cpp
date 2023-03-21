@@ -8,12 +8,15 @@ using namespace std;
 enum TokenType : int {
     IDENTIFIER = 0,
     NUMBER,
+    NUMBER_TYPE,
     STRING,
+    STRING_TYPE,
     BOOL,
+    BOOL_TYPE,
     VAR,
     CONST,
     IS,
-    NULL_,
+    NULL_TYPE,
     COMMA,
     SEMICOLON,
     ASSIGN,
@@ -33,6 +36,7 @@ enum TokenType : int {
     READ_STRING,
     PRINT,
     IF,
+    ELSE,
     THEN,
     END,
     LESS, 
@@ -58,12 +62,15 @@ enum TokenType : int {
 const string TokenTypeStr[] = {
     [TokenType::IDENTIFIER] = "IDENTIFIER",
     [TokenType::NUMBER] = "NUMBER",
+    [TokenType::NUMBER_TYPE] = "NUMBER_TYPE",
     [TokenType::STRING] = "STRING",
+    [TokenType::STRING_TYPE] = "STRING_TYPE",
     [TokenType::BOOL] = "BOOL",
+    [TokenType::BOOL_TYPE] = "BOOL_TYPE",
     [TokenType::VAR] = "VAR",
     [TokenType::CONST] = "CONST",
     [TokenType::IS] = "IS",
-    [TokenType::NULL_] = "NULL_",
+    [TokenType::NULL_TYPE] = "NULL_TYPE",
     [TokenType::COMMA] = "COMMA",
     [TokenType::SEMICOLON] = "SEMICOLON",
     [TokenType::ASSIGN] = "ASSIGN",
@@ -83,6 +90,7 @@ const string TokenTypeStr[] = {
     [TokenType::READ_STRING] = "READ_STRING",
     [TokenType::PRINT] = "PRINT",
     [TokenType::IF] = "IF",
+    [TokenType::ELSE] = "ELSE",
     [TokenType::THEN] = "THEN",
     [TokenType::END] = "END",
     [TokenType::LESS] = "LESS",
@@ -289,7 +297,13 @@ class Lexer {
         } else if (identifier == "const") {
             return TokenType::CONST;
         } else if (identifier == "null") {
-            return TokenType::NULL_;
+            return TokenType::NULL_TYPE;
+        } else if (identifier == "string") {
+            return TokenType::STRING_TYPE;
+        } else if (identifier == "number") {
+            return TokenType::NUMBER_TYPE;
+        } else if (identifier == "bool") {
+            return TokenType::BOOL_TYPE;
         } else if (identifier == "true" || identifier == "false") {
             return TokenType::BOOL;
         } else if (identifier == "is") {
@@ -304,6 +318,8 @@ class Lexer {
             return TokenType::PRINT;
         } else if (identifier == "if") {
             return TokenType::IF;
+        } else if (identifier == "else") {
+            return TokenType::ELSE;
         } else if (identifier == "then") {
             return TokenType::THEN;
         } else if (identifier == "end") {
