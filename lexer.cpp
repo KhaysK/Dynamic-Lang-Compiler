@@ -1,9 +1,10 @@
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <regex>
 
-using namespace std;
+#include "parser.tab.hpp"
 
 enum TokenType : int {
     IDENTIFIER = 0,
@@ -351,41 +352,253 @@ class Lexer {
 
 };
 
-int main() {
-string input = R"(
-# btw, this is comment ;)
+vector<Token> tokens;
+int idx = 0;
 
-# create mutable variable
-var x = 1.23;
+yy::parser::symbol_type get_next_token() {
+    while (idx < tokens.size()) {
+        const Token& token = tokens[idx];
+        TokenType type = token.getType();
+        cout << TokenTypeStr[type] << '\n';
+        idx++;
+        switch (type)
+        {
+        case TokenType::IDENTIFIER:
+            return yy::parser::make_IDENTIFIER(token.getLexeme());
+            break;
+        
+        case TokenType::NUMBER:
+            return yy::parser::make_NUMBER(token.getLexeme());
+            break;
 
-# reassign mutable variable to another type
-x = "Hello"; # OK
+        case TokenType::NUMBER_TYPE:
+            return yy::parser::make_NUMBER_TYPE();
+            break;
 
-# assign multiple variables in one line
-var a = 30, b = false;
-
-# can create variable via expression
-var g = 10, h = 20;
-var j = g * h / 2;
-
-# initialize empty variable (it has special type `null`)
-var c; # c is null
-
-# create literal variable 
-const y = "This is string";
-
-# can check type of variable
-var isYString = (y is string); # isYString = true
-
-# can check for null
-var isYNull = (y is null); # isYNull = false)";
-
-Lexer lexer(input);
-vector<Token> tokens = lexer.tokenize();
-
-for (const Token& token : tokens) {
-    cout << "(" << TokenTypeStr[token.getType()] << ", " << token.getLexeme() << ")" << endl;
+        case TokenType::STRING:
+            return yy::parser::make_STRING(token.getLexeme());
+            break;
+        
+        case TokenType::STRING_TYPE:
+            return yy::parser::make_STRING_TYPE();
+            break;
+        
+        case TokenType::BOOL:
+            return yy::parser::make_BOOL();
+            break;
+        
+        case TokenType::BOOL_TYPE:
+            return yy::parser::make_BOOL_TYPE();
+            break;
+        
+        case TokenType::VAR:
+            return yy::parser::make_VAR();
+            break;
+        
+        case TokenType::CONST:
+            return yy::parser::make_CONST();
+            break;
+        
+        case TokenType::IS:
+            return yy::parser::make_IS();
+            break;
+        
+        case TokenType::NULL_TYPE:
+            return yy::parser::make_NULL_TYPE();
+            break;
+        
+        case TokenType::COMMA:
+            return yy::parser::make_COMMA();
+            break;
+        
+        case TokenType::SEMICOLON:
+            return yy::parser::make_SEMICOLON();
+            break;
+        
+        case TokenType::ASSIGN:
+            return yy::parser::make_ASSIGN();
+            break;
+        
+        case TokenType::PLUS:
+            return yy::parser::make_PLUS();
+            break;
+        
+        case TokenType::MINUS:
+            return yy::parser::make_MINUS();
+            break;
+        
+        case TokenType::MUL:
+            return yy::parser::make_MUL();
+            break;
+        
+        case TokenType::DIV:
+            return yy::parser::make_DIV();
+            break;
+        
+        case TokenType::LPAREN:
+            return yy::parser::make_LPAREN();
+            break;
+        
+        case TokenType::RPAREN:
+            return yy::parser::make_RPAREN();
+            break;
+        
+        case TokenType::LBRACKET:
+            return yy::parser::make_LBRACKET();
+            break;
+        
+        case TokenType::RBRACKET:
+            return yy::parser::make_RBRACKET();
+            break;
+        
+        case TokenType::LBRACE:
+            return yy::parser::make_LBRACE();
+            break;
+        
+        case TokenType::RBRACE:
+            return yy::parser::make_RBRACE();
+            break;
+        
+        case TokenType::READ_INT:
+            return yy::parser::make_READ_INT();
+            break;
+        
+        case TokenType::READ_REAL:
+            return yy::parser::make_READ_REAL();
+            break;
+        
+        case TokenType::READ_STRING:
+            return yy::parser::make_READ_STRING();
+            break;
+        
+        case TokenType::PRINT:
+            return yy::parser::make_PRINT();
+            break;
+        
+        case TokenType::IF:
+            return yy::parser::make_IF();
+            break;
+        
+        case TokenType::ELSE:
+            return yy::parser::make_ELSE();
+            break;
+        
+        case TokenType::THEN:
+            return yy::parser::make_THEN();
+            break;
+        
+        case TokenType::END:
+            return yy::parser::make_END();
+            break;
+        
+        case TokenType::LESS:
+            return yy::parser::make_LESS();
+            break;
+        
+        case TokenType::LESS_E:
+            return yy::parser::make_LESS_E();
+            break;
+        
+        case TokenType::GREATER:
+            return yy::parser::make_GREATER();
+            break;
+        
+        case TokenType::GREATER_E:
+            return yy::parser::make_GREATER_E();
+            break;
+        
+        case TokenType::EQUAL:
+            return yy::parser::make_EQUAL();
+            break;
+        
+        case TokenType::NOT_EQUAL:
+            return yy::parser::make_NOT_EQUAL();
+            break;
+        
+        case TokenType::NOT:
+            return yy::parser::make_NOT();
+            break;
+        
+        case TokenType::WHILE_L:
+            return yy::parser::make_WHILE_L();
+            break;
+        
+        case TokenType::FOR_L:
+            return yy::parser::make_FOR_L();
+            break;
+        
+        case TokenType::LOOP:
+            return yy::parser::make_LOOP();
+            break;
+        
+        case TokenType::FUNC:
+            return yy::parser::make_FUNC();
+            break;
+        
+        case TokenType::RETURN:
+            return yy::parser::make_RETURN();
+            break;
+        
+        case TokenType::DO:
+            return yy::parser::make_DO();
+            break;
+        
+        case TokenType::DOT_OP:
+            return yy::parser::make_DOT_OP();
+            break;
+    
+        case TokenType::INVALID:
+            return yy::parser::make_INVALID();
+            break;
+        
+        case TokenType::AND:
+            return yy::parser::make_AND();
+            break;
+        
+        case TokenType::OR:
+            return yy::parser::make_OR();
+            break;
+        
+        case TokenType::XOR:
+            return yy::parser::make_XOR();
+            break;
+        
+        default:
+            return yy::parser::make_EOF_();
+            break;
+        }
+    }
+    return yy::parser::make_EOF_();
 }
 
-return 0;
+int main() {
+    string filename = "tests/7.nnl";
+
+    ifstream file(filename);
+    string line;
+    string input;
+
+    while (getline(file, line)) {
+        input += line + '\n';
+    }
+
+    cout << input << '\n';
+
+    file.close();
+
+    Lexer lexer(input);
+    tokens = lexer.tokenize();
+
+    yy::parser p;
+    p.parse();
+
+    return 0;
+}
+
+namespace yy
+{
+    parser::symbol_type yylex()
+    {
+        return get_next_token();
+    }
 }

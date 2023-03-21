@@ -6,9 +6,9 @@ bin/compiler: obj/parser.tab.o obj/lexer.o
 	mkdir -p bin/
 	$(CC) obj/parser.tab.o obj/lexer.o -o bin/compiler
 
-obj/lexer.o: real_lexer.cpp
+obj/lexer.o: lexer.cpp
 	mkdir -p obj/
-	$(CC) -c real_lexer.cpp -o obj/lexer.o
+	$(CC) -c lexer.cpp -o obj/lexer.o
 
 obj/parser.tab.o: parser.tab.cpp
 	mkdir -p obj/
