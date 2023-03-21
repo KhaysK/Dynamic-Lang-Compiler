@@ -2,3 +2,5 @@
 parser.tab.*
 compiler
 lexer
+obj/
+bin/
