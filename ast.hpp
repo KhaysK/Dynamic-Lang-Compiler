@@ -117,6 +117,12 @@ namespace AST {
             LeafNode(std::string("VarType"), v) {};
     };
 
+    class OpType : public LeafNode {
+    public:
+        OpType(std::string v) :
+            LeafNode(std::string("Op. type"), v) {};
+    };
+
     class NullConst : public ASTNode {
     public:
         explicit NullConst() {}
@@ -238,16 +244,6 @@ namespace AST {
     
     // Loops
 
-    class If : public ASTNode {
-        ASTNode &cond_;
-        Block &ifpart_; 
-        Block &elsepart_;
-    public:
-        explicit If(ASTNode &cond, Block &ifpart, Block &elsepart) :
-            cond_{cond}, ifpart_{ifpart}, elsepart_{elsepart} { };
-        void json(std::ostream& out, AST_print_context& ctx) override;
-    };
-
     class While : public ASTNode {
         ASTNode &while_cond_;
         Block &while_body_;
@@ -255,13 +251,28 @@ namespace AST {
         explicit While(ASTNode &cond, Block &body) :
             while_cond_{cond}, while_body_{body} {};
         void json(std::ostream& out, AST_print_context& ctx) override;
-    }
+    };
 
     class For : public ASTNode {
-        ASTNode &declaration;
-        ASTNode &
-    }
+        ASTNode &decl;
+        ASTNode &cond;
+        ASTNode &iter;
+        Block &for_body;
+    public:
+        explicit For(ASTNode &d, ASTNode &c, ASTNode &i, Block &b) :
+            decl{d}, cond{c}, iter{i}, for_body{b} {};
+        void json(std::ostream& out, AST_print_context& ctx) override;
+    };
 
+    class CompExp: public ASTNode {
+        ASTNode &ident;
+        ASTNode &oper;
+        ASTNode &val;
+    public:
+        CompExp(ASTNode &i, ASTNode &o, ASTNode &v) :
+            ident{i}, oper{o}, val{v} {};
+        void json(std::ostream& out, AST_print_context& ctx) override;
+    };
 
 }
 #endif /* AST_HPP */

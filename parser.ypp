@@ -88,8 +88,8 @@
 
 // AST Nodes
 %type <AST::Block*> block if_alternatives list_assignemtns assignment
-%type <AST::ASTNode*> program statement operation
-%type <AST::ASTNode*> if_statement loop_statement function_call while
+%type <AST::ASTNode*> program statement operation operation_op
+%type <AST::ASTNode*> if_statement loop_statement function_call for_expression
 %type <AST::ASTNode*> expression term factor assignment_value assignment_part assignment_type
 %type <AST::ASTNode*> conditional_expression
 %type <AST::ASTNode*> read_keyword
@@ -212,16 +212,19 @@ operation
 		AST::Ident* ident = new AST::Ident($2); 
 		$$ = new AST::Read(*$1, *ident); 
 	 }
-	| IDENTIFIER operation_op ASSIGN expression SEMICOLON
+	| IDENTIFIER operation_op ASSIGN expression SEMICOLON {
+		AST::Ident* ident = new AST::Ident($1); 
+		$$ = new AST::CompExp(*ident, *$2, *$4); 
+	 }
 	| tuple_element operation_op ASSIGN expression SEMICOLON
 	| IDENTIFIER LBRACKET NUMBER RBRACKET ASSIGN expression SEMICOLON
 	;
 
 operation_op
-	: PLUS
-	| MINUS
-	| MUL
-	| DIV
+	: PLUS { $$ = new AST::OpType("Plus"); }
+	| MINUS { $$ = new AST::OpType("Minus"); }
+	| MUL { $$ = new AST::OpType("Mul"); }
+	| DIV { $$ = new AST::OpType("Div"); }
 	;
 
 read_keyword
@@ -255,11 +258,16 @@ if_alternatives
 
 loop_statement
 	: WHILE_L conditional_expression LOOP block END { $$ = new AST::While(*$2, *$4); }
-	| FOR_L assignment conditional_expression SEMICOLON for_expression LOOP block END { cout << "for statement;\n"; }
+	| FOR_L assignment conditional_expression SEMICOLON for_expression LOOP block END {
+		$$ = new AST::For(*$2, *$3, *$5, *$7);
+	 }
 	;
 
 for_expression
-	: IDENTIFIER operation_op ASSIGN expression
+	: IDENTIFIER operation_op ASSIGN expression {
+		AST::Ident* ident = new AST::Ident($1);
+		$$ = new AST::CompExp(*ident, *$2, *$4);
+	}
 	;
 
 function_declaration

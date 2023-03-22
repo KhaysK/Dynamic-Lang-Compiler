@@ -66,6 +66,23 @@ namespace AST {
         json_close(out, ctx);
     }
 
+    void For::json(std::ostream& out, AST_print_context& ctx) {
+        json_head("For", out, ctx);
+        json_child("decl_", decl, out, ctx);
+        json_child("cond_", cond, out, ctx);
+        json_child("iter_", iter, out, ctx);
+        json_child("body_", for_body, out, ctx);
+        json_close(out, ctx);
+    }
+
+    void CompExp::json(std::ostream& out, AST_print_context& ctx) {
+        json_head("Comp Exp", out, ctx);
+        json_child("ident", ident, out, ctx);
+        json_child("operation", oper, out, ctx);
+        json_child("val", val, out, ctx);
+        json_close(out, ctx);
+    }
+
     void Not::json(std::ostream& out, AST_print_context& ctx) {
         json_head("Not", out, ctx);
         json_child("left_", left_, out, ctx);
