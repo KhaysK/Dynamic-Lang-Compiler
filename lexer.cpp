@@ -5,9 +5,11 @@
 #include <regex>
 
 #include "parser.tab.hpp"
+#include "ast.hpp"
 
 enum TokenType : int {
-    IDENTIFIER = 0,
+    EOF_ = 0,
+    IDENTIFIER,
     NUMBER,
     NUMBER_TYPE,
     STRING,
@@ -31,7 +33,6 @@ enum TokenType : int {
     RBRACKET,
     LBRACE,
     RBRACE,
-    EOF_,
     READ_INT,
     READ_REAL,
     READ_STRING,
@@ -61,6 +62,7 @@ enum TokenType : int {
 };
 
 const string TokenTypeStr[] = {
+    [TokenType::EOF_] = "EOF_",
     [TokenType::IDENTIFIER] = "IDENTIFIER",
     [TokenType::NUMBER] = "NUMBER",
     [TokenType::NUMBER_TYPE] = "NUMBER_TYPE",
@@ -85,7 +87,6 @@ const string TokenTypeStr[] = {
     [TokenType::RBRACKET] = "RBRACKET",
     [TokenType::LBRACE] = "LBRACE",
     [TokenType::RBRACE] = "RBRACE",
-    [TokenType::EOF_] = "EOF_",
     [TokenType::READ_INT] = "READ_INT",
     [TokenType::READ_REAL] = "READ_REAL",
     [TokenType::READ_STRING] = "READ_STRING",
@@ -356,223 +357,225 @@ vector<Token> tokens;
 int idx = 0;
 
 yy::parser::symbol_type get_next_token() {
-    while (idx < tokens.size()) {
-        const Token& token = tokens[idx];
-        TokenType type = token.getType();
-        cout << TokenTypeStr[type] << '\n';
-        idx++;
-        switch (type)
-        {
+    const Token& token = tokens[idx];
+    TokenType type = token.getType();
+    // cout << TokenTypeStr[type] << '\n';
+    idx++;
+    switch (type) {
         case TokenType::IDENTIFIER:
             return yy::parser::make_IDENTIFIER(token.getLexeme());
             break;
-        
+    
         case TokenType::NUMBER:
             return yy::parser::make_NUMBER(token.getLexeme());
             break;
-
+        
         case TokenType::NUMBER_TYPE:
             return yy::parser::make_NUMBER_TYPE();
             break;
-
+        
         case TokenType::STRING:
             return yy::parser::make_STRING(token.getLexeme());
             break;
-        
+
         case TokenType::STRING_TYPE:
             return yy::parser::make_STRING_TYPE();
             break;
-        
+
         case TokenType::BOOL:
-            return yy::parser::make_BOOL();
+            return yy::parser::make_BOOL(token.getLexeme());
             break;
-        
+
         case TokenType::BOOL_TYPE:
             return yy::parser::make_BOOL_TYPE();
             break;
-        
+
         case TokenType::VAR:
             return yy::parser::make_VAR();
             break;
-        
+
         case TokenType::CONST:
             return yy::parser::make_CONST();
             break;
-        
+
         case TokenType::IS:
             return yy::parser::make_IS();
             break;
-        
+
         case TokenType::NULL_TYPE:
             return yy::parser::make_NULL_TYPE();
             break;
-        
+
         case TokenType::COMMA:
             return yy::parser::make_COMMA();
             break;
-        
+
         case TokenType::SEMICOLON:
             return yy::parser::make_SEMICOLON();
             break;
-        
+
         case TokenType::ASSIGN:
             return yy::parser::make_ASSIGN();
             break;
-        
+
         case TokenType::PLUS:
             return yy::parser::make_PLUS();
             break;
-        
+
         case TokenType::MINUS:
             return yy::parser::make_MINUS();
             break;
-        
+
         case TokenType::MUL:
             return yy::parser::make_MUL();
             break;
-        
+
         case TokenType::DIV:
             return yy::parser::make_DIV();
             break;
-        
+
         case TokenType::LPAREN:
             return yy::parser::make_LPAREN();
             break;
-        
+
         case TokenType::RPAREN:
             return yy::parser::make_RPAREN();
             break;
-        
+
         case TokenType::LBRACKET:
             return yy::parser::make_LBRACKET();
             break;
-        
+
         case TokenType::RBRACKET:
             return yy::parser::make_RBRACKET();
             break;
-        
+
         case TokenType::LBRACE:
             return yy::parser::make_LBRACE();
             break;
-        
+
         case TokenType::RBRACE:
             return yy::parser::make_RBRACE();
             break;
-        
+
         case TokenType::READ_INT:
             return yy::parser::make_READ_INT();
             break;
-        
+
         case TokenType::READ_REAL:
             return yy::parser::make_READ_REAL();
             break;
-        
+
         case TokenType::READ_STRING:
             return yy::parser::make_READ_STRING();
             break;
-        
+
         case TokenType::PRINT:
             return yy::parser::make_PRINT();
             break;
-        
+
         case TokenType::IF:
             return yy::parser::make_IF();
             break;
-        
+
         case TokenType::ELSE:
             return yy::parser::make_ELSE();
             break;
-        
+
         case TokenType::THEN:
             return yy::parser::make_THEN();
             break;
-        
+
         case TokenType::END:
             return yy::parser::make_END();
             break;
-        
+
         case TokenType::LESS:
             return yy::parser::make_LESS();
             break;
-        
+
         case TokenType::LESS_E:
             return yy::parser::make_LESS_E();
             break;
-        
+
         case TokenType::GREATER:
             return yy::parser::make_GREATER();
             break;
-        
+
         case TokenType::GREATER_E:
             return yy::parser::make_GREATER_E();
             break;
-        
+
         case TokenType::EQUAL:
             return yy::parser::make_EQUAL();
             break;
-        
+
         case TokenType::NOT_EQUAL:
             return yy::parser::make_NOT_EQUAL();
             break;
-        
+
         case TokenType::NOT:
             return yy::parser::make_NOT();
             break;
-        
+
         case TokenType::WHILE_L:
             return yy::parser::make_WHILE_L();
             break;
-        
+
         case TokenType::FOR_L:
             return yy::parser::make_FOR_L();
             break;
-        
+
         case TokenType::LOOP:
             return yy::parser::make_LOOP();
             break;
-        
+
         case TokenType::FUNC:
             return yy::parser::make_FUNC();
             break;
-        
+
         case TokenType::RETURN:
             return yy::parser::make_RETURN();
             break;
-        
+
         case TokenType::DO:
             return yy::parser::make_DO();
             break;
-        
+
         case TokenType::DOT_OP:
             return yy::parser::make_DOT_OP();
             break;
-    
+
         case TokenType::INVALID:
+            cout << "lexer error on token " << '"' << token.getLexeme() << '"' << " (line: " << token.getLine() << ")\n";
+            exit(1);
             return yy::parser::make_INVALID();
             break;
-        
+
         case TokenType::AND:
             return yy::parser::make_AND();
             break;
-        
+
         case TokenType::OR:
             return yy::parser::make_OR();
             break;
-        
+
         case TokenType::XOR:
             return yy::parser::make_XOR();
             break;
-        
-        default:
+
+        case TokenType::EOF_:
             return yy::parser::make_EOF_();
             break;
-        }
+
+        default:
+            return yy::parser::make_INVALID();
+            break;
     }
-    return yy::parser::make_EOF_();
 }
 
 int main() {
-    string filename = "tests/7.nnl";
+    string filename = "tests/1.nnl";
 
     ifstream file(filename);
     string line;
@@ -588,8 +591,9 @@ int main() {
 
     Lexer lexer(input);
     tokens = lexer.tokenize();
+    AST::ASTNode* ast_root;
 
-    yy::parser p;
+    yy::parser p(&ast_root);
     p.parse();
 
     return 0;

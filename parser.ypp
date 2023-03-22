@@ -4,15 +4,17 @@
 %define api.token.constructor
 %define parse.assert
 %define parse.trace
+%define parse.error verbose
 
+%parse-param { AST::ASTNode** ast_root }
 %code requires
 {
     #pragma once
     #include <iostream>
     #include <string>
-		#define YYDEBUG 1
+	#include "ast.hpp"
 
-		using namespace std;
+	using namespace std;
     
     // forward decleration (1)
     namespace yy
@@ -27,14 +29,16 @@
         parser::symbol_type yylex(); // override (2)
         // no need to override the error function because it is already waiting for our implementation (3)
     }
+	void dump(AST::ASTNode* n);
 
     extern yy::parser::symbol_type get_next_token();
 }
 
-%token <std::string> IDENTIFIER
-%token <std::string> NUMBER
-%token <std::string> STRING
-%token BOOL
+%token EOF_ 0 "end of file"
+%token <string> IDENTIFIER
+%token <string> NUMBER
+%token <string> STRING
+%token <string> BOOL
 %token VAR
 %token CONST
 %token IS
@@ -51,7 +55,6 @@
 %token DIV
 %token LPAREN
 %token RPAREN
-%token EOF_
 %token LBRACKET
 %token RBRACKET
 %token LBRACE
@@ -83,6 +86,13 @@
 %token OR
 %token XOR
 
+// AST Nodes
+%type <AST::Block*> block if_alternatives list_assignemtns assignment
+%type <AST::ASTNode*> program statement operation
+%type <AST::ASTNode*> if_statement loop_statement function_call
+%type <AST::ASTNode*> expression term factor assignment_value assignment_part assignment_type
+%type <AST::ASTNode*> conditional_expression
+ 
 %left AND OR
 %left NOT
 %nonassoc LESS GREATER LESS_E GREATER_E EQUAL
@@ -91,29 +101,35 @@
 
 %%
 
-program: /* empty */
-	| block EOF_
+program
+	: block { *ast_root = $1; }
 	;
 
 block
-	: statement
-	| operation
-	| block statement {  }
-	| block operation
+	: statement { $$ = new AST::Block(); $$->append($1); }
+	| operation { $$ = new AST::Block(); $$->append($1); }
+	| block statement { $1->append($2); $$ = $1; }
+	| block operation { $1->append($2); $$ = $1; }
 	;
 
 statement
-	: assignment
-	| if_statement
-	| loop_statement
-	| function_call
+	: assignment { $$ = $1; }
+	| if_statement { $$ = $1; }
+ 	| loop_statement { $$ = $1; }
+	| function_call { $$ = $1; }
 	;
 
 
 assignment
-	: list_assignemtns SEMICOLON { std::cout << "reassign;" << "\n"; }
-	| declaration_specifics list_assignemtns SEMICOLON { std::cout << "declaration;" << '\n'; }
-	| declaration_specifics IDENTIFIER ASSIGN function_declaration { cout << "declaration;\n"; }
+	: list_assignemtns SEMICOLON { $$ = $1; }
+	| declaration_specifics list_assignemtns SEMICOLON { $$ = $2; }
+	| declaration_specifics IDENTIFIER ASSIGN function_declaration { 
+		AST::Ident* lhs = new AST::Ident($2);
+		AST::ASTNode* rhs = new AST::NullConst();
+		$$ = new AST::Block();
+		AST::ASTNode* node = new AST::Assign(*lhs, *rhs);
+		$$->append(node);
+	 }
 	;
 
 declaration_specifics
@@ -121,25 +137,34 @@ declaration_specifics
 	| CONST;
 
 list_assignemtns
-	: list_assignemtns COMMA assignment_part
-	| assignment_part { cout << "assignment right part\n"; }
+	: list_assignemtns COMMA assignment_part { $1->append($3); $$ = $1; }
+	| assignment_part { $$ = new AST::Block(); $$->append($1); }
 	;
 
 assignment_part
-	: IDENTIFIER ASSIGN assignment_value
-	| IDENTIFIER ASSIGN expression
-	| IDENTIFIER /* empty */
+	: IDENTIFIER ASSIGN assignment_value {
+		AST::Ident* lhs = new AST::Ident($1);
+		AST::ASTNode* rhs = $3;
+		$$ = new AST::Assign(*lhs, *rhs);
+		dump($$);
+	 }
+	| IDENTIFIER ASSIGN expression {
+		AST::Ident* lhs = new AST::Ident($1);
+		AST::ASTNode* rhs = $3;
+		$$ = new AST::Assign(*lhs, *rhs);
+		dump($$);
+	 }
+	| IDENTIFIER {
+		AST::Ident* lhs = new AST::Ident($1);
+		AST::ASTNode* rhs = new AST::NullConst();
+		$$ = new AST::Assign(*lhs, *rhs);
+		dump($$);
+	}
 	;
 
 assignment_value
-	: NULL_TYPE
-	| BOOL
-	| LBRACKET RBRACKET
-	| NUMBER
-	| STRING
-	| function_call
-	| LBRACE list_assignemtns RBRACE
-	| LBRACKET function_params RBRACKET
+	: LBRACKET RBRACKET { $$ = new AST::NullConst(); }
+	| LBRACKET function_params RBRACKET { $$ = new AST::StringConst("function"); }
 	;
 
 tuple_element
@@ -148,42 +173,46 @@ tuple_element
 	;
 
 assignment_type
-	: NULL_TYPE
-	| BOOL_TYPE
-	| NUMBER_TYPE
-	| STRING_TYPE
+	: NULL_TYPE { $$ = new AST::VarType("null"); }
+	| BOOL_TYPE { $$ = new AST::VarType("bool"); }
+	| NUMBER_TYPE { $$ = new AST::VarType("number"); }
+	| STRING_TYPE { $$ = new AST::VarType("string"); }
 	;
 
 expression
-	: term
-	| expression PLUS term
-	| expression MINUS term
-	| LPAREN expression RPAREN
+	: term { $$ = $1; }
+	| expression PLUS term { $$ = new AST::Plus(*$1, *$3); }
+	| expression MINUS term { $$ = new AST::Minus(*$1, *$3); }
+	| LPAREN expression RPAREN { $$ = $2; }
 	;
 
 term
-	: factor
-	| term MUL factor
-	| term DIV factor
+	: factor { $$ = $1; }
+	| term MUL factor { $$ = new AST::Times(*$1, *$3); }
+	| term DIV factor { $$ = new AST::Div(*$1, *$3); }
 	;
 
 factor
-	: NUMBER
-	| STRING
-	| BOOL
-	| IDENTIFIER
-	| function_call
-	| tuple_element
-	| IDENTIFIER LBRACKET NUMBER RBRACKET
-	| IDENTIFIER IS assignment_type
+	: NUMBER { $$ = new AST::NumberConst($1); }
+	| STRING { $$ = new AST::StringConst($1); }
+	| BOOL { $$ = new AST::BoolConst($1); }
+	| IDENTIFIER { $$ = new AST::Ident($1); }
+	| function_call { $$ = new AST::StringConst("function call"); }
+	| tuple_element { $$ = new AST::StringConst("tuple element"); }
+	| LBRACE list_assignemtns RBRACE { $$ = new AST::StringConst("tuple declaration"); }
+	| IDENTIFIER LBRACKET NUMBER RBRACKET { $$ = new AST::StringConst("array element"); }
+	| IDENTIFIER IS assignment_type {
+		AST::Ident* lhs = new AST::Ident($1);
+		$$ = new AST::Is(*lhs, $3);
+	 }
 	;
 
 
 operation
 	: keyword expression SEMICOLON { cout << "keyword expression;\n"; }
-	| IDENTIFIER operation_op ASSIGN assignment_value SEMICOLON
-	| tuple_element operation_op ASSIGN assignment_value SEMICOLON
-	| IDENTIFIER LBRACKET NUMBER RBRACKET ASSIGN assignment_value SEMICOLON
+	| IDENTIFIER operation_op ASSIGN expression SEMICOLON
+	| tuple_element operation_op ASSIGN expression SEMICOLON
+	| IDENTIFIER LBRACKET NUMBER RBRACKET ASSIGN expression SEMICOLON
 	;
 
 operation_op
@@ -217,9 +246,8 @@ conditional_expression
 	;
 
 if_alternatives
-	: /* empty */
+	: %empty
 	| ELSE block
-	| ELSE IF conditional_expression THEN block if_alternatives
 	;
 
 loop_statement
@@ -228,7 +256,7 @@ loop_statement
 	;
 
 for_expression
-	: IDENTIFIER operation_op ASSIGN assignment_value
+	: IDENTIFIER operation_op ASSIGN expression
 	;
 
 function_declaration
@@ -238,19 +266,11 @@ function_call
 	: IDENTIFIER LPAREN function_params RPAREN { cout << "function call\n"; }
 
 function_params
-	: list_assignemtns
-	| factor_list
-	;
-
-factor_list
-	: factor_list COMMA factor
+	: factor COMMA function_params
 	| factor
 	;
 
 %%
-int yywrap() {
-	return 0;
-}
 
 namespace yy
 {
@@ -258,4 +278,8 @@ namespace yy
     {
         std::cout<< msg << '\n';
     }
+}
+
+void dump(AST::ASTNode* n) {
+    std::cout << "*** Building: " << n->str() << std::endl;
 }
