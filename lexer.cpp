@@ -575,7 +575,7 @@ yy::parser::symbol_type get_next_token() {
 }
 
 int main() {
-    string filename = "tests/1.nnl";
+    string filename = "tests/4.nnl";
 
     ifstream file(filename);
     string line;

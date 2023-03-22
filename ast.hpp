@@ -1,8 +1,5 @@
 #ifndef AST_HPP
 #define AST_HPP
-//
-// Created by Michal Young on 9/12/18.
-
 #include <string>
 #include <sstream>
 #include <vector>
@@ -10,13 +7,9 @@
 #include <assert.h>
 
 namespace AST {
-    // Abstract syntax tree.  ASTNode is abstract base class for all other nodes.
-
-    // Json conversion and pretty-printing can pass around a print context object
-    // to keep track of indentation, and possibly other things.
     class AST_print_context {
     public:
-        int indent_; // Number of spaces to place on left, after each newline
+        int indent_;
         AST_print_context() : indent_{0} {};
         void indent() { ++indent_; }
         void dedent() { --indent_; }
@@ -25,10 +18,9 @@ namespace AST {
 
     class ASTNode {
     public:
-        /* Dump JSON representation */
         virtual void json(std::ostream& out, AST_print_context& ctx) = 0;
 
-        std::string str() {  // String representation is JSON
+        std::string str() {
             std::stringstream ss;
             AST_print_context ctx;
             json(ss, ctx);
@@ -41,10 +33,6 @@ namespace AST {
         void json_child(std::string field, ASTNode& child, std::ostream& out, AST_print_context& ctx, char sep=',');
     };
 
-    /* A block is a sequence of statements or expressions.
-     * For simplicity we'll just make it a sequence of ASTNode,
-     * and leave it to the parser to build valid structures.
-     */
     class Block : public ASTNode {
         std::vector<ASTNode*> stmts_;
     public:
@@ -53,26 +41,6 @@ namespace AST {
         void json(std::ostream& out, AST_print_context& ctx) override;
      };
 
-    /* L_Expr nodes are AST nodes that can be evaluated for location.
-     * Most can also be evaluated for value_.  An example of an L_Expr
-     * is an identifier, which can appear on the left_ hand or right_ hand
-     * side of an assignment.  For example, in x = y, x is evaluated for
-     * location and y is evaluated for value_.
-     *
-     * For now, a location is just a name, because that's what we index
-     * the symbol table with.  In a full compiler, locations can be
-     * more complex, and typically in code generation we would have
-     * LExpr evaluate to an address in a register.
-     *
-     * LExpr is abstract.  It's only concrete subclass for now is Ident,
-     * but in a full OO language we would have LExprs that look like
-     * a.b and a[2].
-     */
-
-    /* An assignment has an lvalue (location to be assigned to)
-     * and an expression.  We evaluate the expression and place
-     * the value_ in the variable.
-     */
 
     class Assign : public ASTNode {
         ASTNode &lexpr_;
@@ -84,20 +52,15 @@ namespace AST {
     };
 
     class If : public ASTNode {
-        ASTNode &cond_; // The boolean expression to be evaluated
-        Block &truepart_; // Execute this block if the condition is true
-        Block &falsepart_; // Execute this block if the condition is false
+        ASTNode &cond_;
+        Block &ifpart_; 
+        Block &elsepart_;
     public:
-        explicit If(ASTNode &cond, Block &truepart, Block &falsepart) :
-            cond_{cond}, truepart_{truepart}, falsepart_{falsepart} { };
+        explicit If(ASTNode &cond, Block &ifpart, Block &elsepart) :
+            cond_{cond}, ifpart_{ifpart}, elsepart_{elsepart} { };
         void json(std::ostream& out, AST_print_context& ctx) override;
     };
 
-    /* We need a node to represent interpretation of an r-expression
-     * as a boolean.  While r-expressions have a gen_rvalue method,
-     * we need a gen_branch method for r-expressions that are
-     * interpreted as booleans.
-     */
     class AsBool : public ASTNode {
         ASTNode &left_;
     public:
@@ -105,19 +68,19 @@ namespace AST {
         void json(std::ostream& out, AST_print_context& ctx) override;
     };
 
-    /* Identifiers like x and literals like 42 are the
-     * leaves of the AST.  A literal can only be evaluated
-     * for value_ (the 'eval' method), but an identifier
-     * can also be evaluated for location (when we want to
-     * store something in it).
-     */
+    class Print : public ASTNode {
+        ASTNode& left_;
+    public:
+        explicit Print(ASTNode &l) : left_{l} {}
+        void json(std::ostream& out, AST_print_context& ctx) override;
+    };
+
     class Ident : public ASTNode {
         std::string text_;
     public:
         explicit Ident(std::string txt) : text_{txt} {}
         void json(std::ostream& out, AST_print_context& ctx) override;
     };
-
 
     // Leaf nodes
     class LeafNode : public ASTNode {
@@ -160,11 +123,8 @@ namespace AST {
         void json(std::ostream& out, AST_print_context& ctx) override;
     };
 
-    // Virtual base class for +, -, *, /, etc
+    // Bin Operations
     class BinOp : public ASTNode {
-        // each subclass must override the inherited
-        // eval() method
-
     protected:
         std::string opsym;
         ASTNode &left_;
@@ -207,22 +167,20 @@ namespace AST {
 
     class Div : public BinOp {
     public:
-        Div (ASTNode &l, ASTNode &r) :
+        Div(ASTNode &l, ASTNode &r) :
                 BinOp(std::string("Div"),  l, r) {};
     };
 
-    // Boolean combinations and, or, not are short-circuit evaluated.
-    // The BinOp superclass will be ok, be we need to add a
-    // gen_branch method for each.
+    // Condition expressions
     class And : public BinOp {
     public:
-        And (ASTNode &l, ASTNode &r) :
+        And(ASTNode &l, ASTNode &r) :
                 BinOp(std::string("And"),  l, r) {};
     };
 
     class Or : public BinOp {
     public:
-        Or (ASTNode &l, ASTNode &r) :
+        Or(ASTNode &l, ASTNode &r) :
                 BinOp(std::string("Or"),  l, r) {};
     };
 
@@ -233,16 +191,7 @@ namespace AST {
         void json(std::ostream& out, AST_print_context& ctx) override;
     };
 
-    class Print : public ASTNode {
-        ASTNode& left_;
-    public:
-        explicit Print(ASTNode &l) : left_{l} {}
-        void json(std::ostream& out, AST_print_context& ctx) override;
-    };
-
-    // For comparisons, we want to factor out a bit more of the common
-    // code generation
-
+    // Comparing 
     class Compare : public BinOp {
     protected:
         std::string c_compare_op_;
@@ -252,33 +201,66 @@ namespace AST {
 
     class Less : public Compare {
     public:
-        Less (ASTNode &l, ASTNode &r) :
+        Less(ASTNode &l, ASTNode &r) :
             Compare("Less", "<",  l, r) {};
     };
 
-    class AtMost : public Compare {
+    class Less_E : public Compare {
     public:
-        AtMost (ASTNode &l, ASTNode &r) :
-                Compare("AtMost", "<=",  l, r) {};
+        Less_E(ASTNode &l, ASTNode &r) :
+                Compare("Less_E", "<=",  l, r) {};
     };
 
-    class AtLeast : public Compare {
+    class Greater_E : public Compare {
     public:
-        AtLeast (ASTNode &l, ASTNode &r) :
-                Compare("AtLeast", ">=",  l, r) {};
+        Greater_E(ASTNode &l, ASTNode &r) :
+                Compare("Greater_E", ">=",  l, r) {};
     };
 
     class Greater : public Compare {
     public:
-        Greater (ASTNode &l, ASTNode &r) :
-                Compare("Less", "<", l, r) {};
+        Greater(ASTNode &l, ASTNode &r) :
+                Compare("Greater", ">", l, r) {};
     };
 
     class Equals : public Compare {
     public:
-        Equals (ASTNode &l, ASTNode &r) :
+        Equals(ASTNode &l, ASTNode &r) :
                 Compare("Equals", "==", l, r) {};
     };
+
+    class Not_Equals : public Compare {
+    public:
+        Not_Equals(ASTNode &l, ASTNode &r) :
+                Compare("Not Equals", "!=", l, r) {};
+    };
+
+    
+    // Loops
+
+    class If : public ASTNode {
+        ASTNode &cond_;
+        Block &ifpart_; 
+        Block &elsepart_;
+    public:
+        explicit If(ASTNode &cond, Block &ifpart, Block &elsepart) :
+            cond_{cond}, ifpart_{ifpart}, elsepart_{elsepart} { };
+        void json(std::ostream& out, AST_print_context& ctx) override;
+    };
+
+    class While : public ASTNode {
+        ASTNode &while_cond_;
+        Block &while_body_;
+    public:
+        explicit While(ASTNode &cond, Block &body) :
+            while_cond_{cond}, while_body_{body} {};
+        void json(std::ostream& out, AST_print_context& ctx) override;
+    }
+
+    class For : public ASTNode {
+        ASTNode &declaration;
+        ASTNode &
+    }
 
 
 }

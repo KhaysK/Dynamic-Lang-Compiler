@@ -89,7 +89,7 @@
 // AST Nodes
 %type <AST::Block*> block if_alternatives list_assignemtns assignment
 %type <AST::ASTNode*> program statement operation
-%type <AST::ASTNode*> if_statement loop_statement function_call
+%type <AST::ASTNode*> if_statement loop_statement function_call while
 %type <AST::ASTNode*> expression term factor assignment_value assignment_part assignment_type
 %type <AST::ASTNode*> conditional_expression
 %type <AST::ASTNode*> read_keyword
@@ -230,29 +230,31 @@ read_keyword
 	| READ_STRING { $$ = new AST::VarType("String"); }
 
 if_statement
-	: IF conditional_expression THEN block if_alternatives END
+	: IF conditional_expression THEN block if_alternatives END {
+		$$ = new AST::If(*$2, *$4, *$5);
+	}
 	;
 
 conditional_expression 
-	: conditional_expression AND conditional_expression
-	| conditional_expression OR conditional_expression
-	| NOT conditional_expression
-	| expression LESS expression { cout << "a < 5\n";}
-	| expression LESS_E expression
-	| expression GREATER expression
-	| expression GREATER_E expression
-	| expression EQUAL expression
-	| expression NOT_EQUAL expression
-	| expression
+	: conditional_expression AND conditional_expression { $$ = new AST::And(*$1, *$3); }
+	| conditional_expression OR conditional_expression { $$ = new AST::Or(*$1, *$3); }
+	| NOT conditional_expression { $$ = new AST::Not(*$2); }
+	| expression LESS expression { $$ = new AST::Less(*$1, *$3); }
+	| expression LESS_E expression { $$ = new AST::Less_E(*$1, *$3); }
+	| expression GREATER expression { $$ = new AST::Greater(*$1, *$3); }
+	| expression GREATER_E expression { $$ = new AST::Greater_E(*$1, *$3); }
+	| expression EQUAL expression { $$ = new AST::Equals(*$1, *$3); }
+	| expression NOT_EQUAL expression { $$ = new AST::Not_Equals(*$1, *$3); }
+	| expression { $$ = new AST::AsBool(*$1); }
 	;
 
 if_alternatives
-	: %empty
-	| ELSE block
+	: %empty { $$ = new AST::Block(); }
+	| ELSE block { $$ = $2; }
 	;
 
 loop_statement
-	: WHILE_L conditional_expression LOOP block END { cout << "while statement;\n"; }
+	: WHILE_L conditional_expression LOOP block END { $$ = new AST::While(*$2, *$4); }
 	| FOR_L assignment conditional_expression SEMICOLON for_expression LOOP block END { cout << "for statement;\n"; }
 	;
 
