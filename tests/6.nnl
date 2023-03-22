@@ -1,9 +1,0 @@
-# arrays behave like `real` associative array with integers as keys
-# also arrays are indexed starting from 1
-
-var arr = [];
-arr[1] = "hi";
-arr[15] = 3.14;
-
-print arr; # {1: "hi", 15: 3.14}
-

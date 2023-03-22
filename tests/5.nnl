@@ -1,8 +1,0 @@
-# functions are objects too
-
-var f = func(a, b) do
-	var c = a + b;
-	return c;
-end
-
-print f(10, 20); # 30

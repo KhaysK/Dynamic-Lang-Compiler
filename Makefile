@@ -19,7 +19,7 @@ obj/ast.o: ast.cpp
 	$(CC) -c ast.cpp -o obj/ast.o
 
 parser.tab.cpp: parser.ypp
-	bison -d parser.ypp -Wcounterexamples
+	@bison -d parser.ypp -Wcounterexamples >/dev/null 2>/dev/null
 
 clean:
 	rm -rf obj/ bin/ parser.tab.?pp
