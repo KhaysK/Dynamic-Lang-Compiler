@@ -93,6 +93,12 @@ namespace AST {
         json_close(out, ctx);
     }
 
+    void Print::json(std::ostream& out, AST_print_context& ctx) {
+        json_head("Print", out, ctx);
+        json_child("left_", left_, out, ctx);
+        json_close(out, ctx);
+    }
+
     void AsBool::json(std::ostream& out, AST_print_context& ctx) {
         json_head("AsBool", out, ctx);
         json_child("left_", left_, out, ctx);

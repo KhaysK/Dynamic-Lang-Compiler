@@ -68,9 +68,6 @@ namespace AST {
      * but in a full OO language we would have LExprs that look like
      * a.b and a[2].
      */
-    class LExpr : public ASTNode {
-    public:
-    };
 
     /* An assignment has an lvalue (location to be assigned to)
      * and an expression.  We evaluate the expression and place
@@ -78,10 +75,10 @@ namespace AST {
      */
 
     class Assign : public ASTNode {
-        LExpr &lexpr_;
+        ASTNode &lexpr_;
         ASTNode &rexpr_;
     public:
-        Assign(LExpr &lexpr, ASTNode &rexpr) :
+        Assign(ASTNode &lexpr, ASTNode &rexpr) :
            lexpr_{lexpr}, rexpr_{rexpr} {};
         void json(std::ostream& out, AST_print_context& ctx) override;
     };
@@ -114,7 +111,7 @@ namespace AST {
      * can also be evaluated for location (when we want to
      * store something in it).
      */
-    class Ident : public LExpr {
+    class Ident : public ASTNode {
         std::string text_;
     public:
         explicit Ident(std::string txt) : text_{txt} {}
@@ -178,9 +175,15 @@ namespace AST {
         void json(std::ostream& out, AST_print_context& ctx) override;
     };
 
-    class Is : public BinOp {
+    class Read : public BinOp {
     public:
-        Plus(ASTNode &l, ASTNode &r) :
+        Read(ASTNode &l, ASTNode &r) :
+                BinOp(std::string("Read"),  l, r) {};
+    };
+
+    class IsOp : public BinOp {
+    public:
+        IsOp(ASTNode &l, ASTNode &r) :
                 BinOp(std::string("Is"),  l, r) {};
     };
 
@@ -227,6 +230,13 @@ namespace AST {
         ASTNode& left_;
     public:
         explicit Not(ASTNode &l) : left_{l} {}
+        void json(std::ostream& out, AST_print_context& ctx) override;
+    };
+
+    class Print : public ASTNode {
+        ASTNode& left_;
+    public:
+        explicit Print(ASTNode &l) : left_{l} {}
         void json(std::ostream& out, AST_print_context& ctx) override;
     };
 

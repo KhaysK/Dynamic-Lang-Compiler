@@ -92,6 +92,7 @@
 %type <AST::ASTNode*> if_statement loop_statement function_call
 %type <AST::ASTNode*> expression term factor assignment_value assignment_part assignment_type
 %type <AST::ASTNode*> conditional_expression
+%type <AST::ASTNode*> read_keyword
  
 %left AND OR
 %left NOT
@@ -146,19 +147,16 @@ assignment_part
 		AST::Ident* lhs = new AST::Ident($1);
 		AST::ASTNode* rhs = $3;
 		$$ = new AST::Assign(*lhs, *rhs);
-		dump($$);
 	 }
 	| IDENTIFIER ASSIGN expression {
 		AST::Ident* lhs = new AST::Ident($1);
 		AST::ASTNode* rhs = $3;
 		$$ = new AST::Assign(*lhs, *rhs);
-		dump($$);
 	 }
 	| IDENTIFIER {
 		AST::Ident* lhs = new AST::Ident($1);
 		AST::ASTNode* rhs = new AST::NullConst();
 		$$ = new AST::Assign(*lhs, *rhs);
-		dump($$);
 	}
 	;
 
@@ -203,13 +201,17 @@ factor
 	| IDENTIFIER LBRACKET NUMBER RBRACKET { $$ = new AST::StringConst("array element"); }
 	| IDENTIFIER IS assignment_type {
 		AST::Ident* lhs = new AST::Ident($1);
-		$$ = new AST::Is(*lhs, $3);
+		$$ = new AST::IsOp(*lhs, *$3);
 	 }
 	;
 
 
 operation
-	: keyword expression SEMICOLON { cout << "keyword expression;\n"; }
+	: PRINT expression SEMICOLON { $$ = new AST::Print(*$2); }
+	| read_keyword IDENTIFIER SEMICOLON { 
+		AST::Ident* ident = new AST::Ident($2); 
+		$$ = new AST::Read(*$1, *ident); 
+	 }
 	| IDENTIFIER operation_op ASSIGN expression SEMICOLON
 	| tuple_element operation_op ASSIGN expression SEMICOLON
 	| IDENTIFIER LBRACKET NUMBER RBRACKET ASSIGN expression SEMICOLON
@@ -222,11 +224,10 @@ operation_op
 	| DIV
 	;
 
-keyword
-	: READ_INT
-	| READ_REAL
-	| READ_STRING
-	| PRINT
+read_keyword
+	: READ_INT { $$ = new AST::VarType("Int"); }
+	| READ_REAL { $$ = new AST::VarType("Real"); }
+	| READ_STRING { $$ = new AST::VarType("String"); }
 
 if_statement
 	: IF conditional_expression THEN block if_alternatives END

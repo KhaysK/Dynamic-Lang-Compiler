@@ -596,6 +596,8 @@ int main() {
     yy::parser p(&ast_root);
     p.parse();
 
+    cout << ast_root->str() << '\n';
+
     return 0;
 }
 
