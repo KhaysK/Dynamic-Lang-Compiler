@@ -269,10 +269,69 @@ namespace AST {
         ASTNode &oper;
         ASTNode &val;
     public:
-        CompExp(ASTNode &i, ASTNode &o, ASTNode &v) :
+        explicit CompExp(ASTNode &i, ASTNode &o, ASTNode &v) :
             ident{i}, oper{o}, val{v} {};
         void json(std::ostream& out, AST_print_context& ctx) override;
     };
 
+    // Functions
+
+    class FuncDecl: public ASTNode {
+        Block &params;
+        Block &funcBody;
+        ASTNode &expr;
+    public:
+        explicit FuncDecl(Block &func_params, Block &func_body, ASTNode &func_expr) :
+            params{func_params}, funcBody{func_body}, expr{func_expr} {};
+        void json(std::ostream& out, AST_print_context& ctx) override;
+    };
+
+    class FuncCall: public ASTNode {
+        ASTNode &ident;
+        Block &params;
+    public:
+        explicit FuncCall(ASTNode &func_ident, Block &func_params) :
+            ident(func_ident), params{func_params} {};
+        void json(std::ostream& out, AST_print_context& ctx) override;
+    };
+
+
+    // Arrays
+
+    class ArrayEl : public BinOp {
+    public:
+        ArrayEl(ASTNode &l, ASTNode &r) :
+                BinOp(std::string("ArrElem"),  l, r) {};
+    };
+
+    class ArrayAssign : public BinOp {
+    public:
+        ArrayAssign(ASTNode &l, ASTNode &r) :
+                BinOp(std::string("ArrAssign"),  l, r) {};
+    };
+
+    class ArrayDecl : public ASTNode {
+        Block &params;
+    public:
+        explicit ArrayDecl(Block &array_params) :
+            params{array_params} {};
+        void json(std::ostream& out, AST_print_context& ctx) override;
+    };
+
+    // Tuples
+
+    class TupleEl : public BinOp {
+    public:
+        TupleEl(ASTNode &l, ASTNode &r) :
+                BinOp(std::string("TuplElem"),  l, r) {};
+    };
+
+    class TupleDecl : public ASTNode {
+        Block &params;
+    public:
+        explicit TupleDecl(Block &tuple_params) :
+            params{tuple_params} {};
+        void json(std::ostream& out, AST_print_context& ctx) override; 
+    };
 }
 #endif /* AST_HPP */

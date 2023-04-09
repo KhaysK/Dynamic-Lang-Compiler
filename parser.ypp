@@ -87,10 +87,10 @@
 %token XOR
 
 // AST Nodes
-%type <AST::Block*> block if_alternatives list_assignemtns assignment
+%type <AST::Block*> block if_alternatives list_assignemtns assignment function_params
 %type <AST::ASTNode*> program statement operation operation_op
-%type <AST::ASTNode*> if_statement loop_statement function_call for_expression
-%type <AST::ASTNode*> expression term factor assignment_value assignment_part assignment_type
+%type <AST::ASTNode*> if_statement loop_statement function_call for_expression function_declaration
+%type <AST::ASTNode*> expression term factor assignment_value assignment_part assignment_type tuple_element
 %type <AST::ASTNode*> conditional_expression
 %type <AST::ASTNode*> read_keyword
  
@@ -126,9 +126,8 @@ assignment
 	| declaration_specifics list_assignemtns SEMICOLON { $$ = $2; }
 	| declaration_specifics IDENTIFIER ASSIGN function_declaration { 
 		AST::Ident* lhs = new AST::Ident($2);
-		AST::ASTNode* rhs = new AST::NullConst();
 		$$ = new AST::Block();
-		AST::ASTNode* node = new AST::Assign(*lhs, *rhs);
+		AST::ASTNode* node = new AST::Assign(*lhs, *$4);
 		$$->append(node);
 	 }
 	;
@@ -158,16 +157,33 @@ assignment_part
 		AST::ASTNode* rhs = new AST::NullConst();
 		$$ = new AST::Assign(*lhs, *rhs);
 	}
+	| IDENTIFIER LBRACKET NUMBER RBRACKET ASSIGN expression {
+		AST::Ident* ident = new AST::Ident($1); 
+		AST::NumberConst* idx = new AST::NumberConst($3);
+		AST::ArrayEl* elem = new AST::ArrayEl(*ident, *idx);
+		$$ = new AST::ArrayAssign(*elem, *$6);
+	}
 	;
 
 assignment_value
-	: LBRACKET RBRACKET { $$ = new AST::NullConst(); }
-	| LBRACKET function_params RBRACKET { $$ = new AST::StringConst("function"); }
+	: LBRACKET RBRACKET { 
+		AST::Block* empty = new AST::Block();
+		$$ = new AST::ArrayDecl(*empty);
+	 }
+	| LBRACKET function_params RBRACKET { $$ = new AST::ArrayDecl(*$2); }
 	;
 
 tuple_element
-	: IDENTIFIER DOT_OP IDENTIFIER
-	| IDENTIFIER DOT_OP NUMBER
+	: IDENTIFIER DOT_OP IDENTIFIER {
+		AST::Ident* ident = new AST::Ident($1); 
+		AST::Ident* idx = new AST::Ident($3);
+		$$ = new AST::TupleEl(*ident, *idx);
+	}
+	| IDENTIFIER DOT_OP NUMBER {
+		AST::Ident* ident = new AST::Ident($1); 
+		AST::NumberConst* idx = new AST::NumberConst($3);
+		$$ = new AST::TupleEl(*ident, *idx);
+	}
 	;
 
 assignment_type
@@ -195,10 +211,16 @@ factor
 	| STRING { $$ = new AST::StringConst($1); }
 	| BOOL { $$ = new AST::BoolConst($1); }
 	| IDENTIFIER { $$ = new AST::Ident($1); }
-	| function_call { $$ = new AST::StringConst("function call"); }
-	| tuple_element { $$ = new AST::StringConst("tuple element"); }
-	| LBRACE list_assignemtns RBRACE { $$ = new AST::StringConst("tuple declaration"); }
-	| IDENTIFIER LBRACKET NUMBER RBRACKET { $$ = new AST::StringConst("array element"); }
+	| function_call { $$ = $1; }
+	| tuple_element { $$ = $1; }
+	| LBRACE list_assignemtns RBRACE {
+		$$ = new AST::TupleDecl(*$2);
+	 }
+	| IDENTIFIER LBRACKET NUMBER RBRACKET { 
+		AST::Ident* ident = new AST::Ident($1); 
+		AST::NumberConst* idx = new AST::NumberConst($3);
+		$$ = new AST::ArrayEl(*ident, *idx);
+	 }
 	| IDENTIFIER IS assignment_type {
 		AST::Ident* lhs = new AST::Ident($1);
 		$$ = new AST::IsOp(*lhs, *$3);
@@ -216,8 +238,9 @@ operation
 		AST::Ident* ident = new AST::Ident($1); 
 		$$ = new AST::CompExp(*ident, *$2, *$4); 
 	 }
-	| tuple_element operation_op ASSIGN expression SEMICOLON
-	| IDENTIFIER LBRACKET NUMBER RBRACKET ASSIGN expression SEMICOLON
+	| tuple_element operation_op ASSIGN expression SEMICOLON {
+		$$ = new AST::CompExp(*$1, *$2, *$4); 	
+	}
 	;
 
 operation_op
@@ -271,14 +294,20 @@ for_expression
 	;
 
 function_declaration
-	: FUNC LPAREN function_params RPAREN DO block RETURN expression SEMICOLON END { cout << "function declaration;\n"; }
+	: FUNC LPAREN function_params RPAREN DO block RETURN expression SEMICOLON END { 
+		AST::AsBool* expr = new AST::AsBool(*$8);
+		$$ = new AST::FuncDecl(*$3, *$6, *expr);
+	 }
 
 function_call
-	: IDENTIFIER LPAREN function_params RPAREN { cout << "function call\n"; }
+	: IDENTIFIER LPAREN function_params RPAREN { 
+		AST::Ident* ident = new AST::Ident($1);
+		$$ = new AST::FuncCall(*ident, *$3);
+	 }
 
 function_params
-	: factor COMMA function_params
-	| factor
+	: function_params COMMA factor { $1->append($3); $$ = $1; }
+	| factor { $$ = new AST::Block(); $$->append($1); }
 	;
 
 %%

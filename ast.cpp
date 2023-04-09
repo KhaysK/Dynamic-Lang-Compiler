@@ -83,6 +83,33 @@ namespace AST {
         json_close(out, ctx);
     }
 
+    void FuncDecl::json(std::ostream& out, AST_print_context& ctx) {
+        json_head("Func Declaration", out, ctx);
+        json_child("func_params", params, out, ctx);
+        json_child("func_body", funcBody, out, ctx);
+        json_child("func_expr", expr, out, ctx);
+        json_close(out, ctx);
+    }
+
+    void FuncCall::json(std::ostream& out, AST_print_context& ctx) {
+        json_head("Func Call", out, ctx);
+        json_child("func ident", ident, out, ctx);
+        json_child("func params", params, out, ctx);
+        json_close(out, ctx);
+    }
+
+    void ArrayDecl::json(std::ostream& out, AST_print_context& ctx) {
+        json_head("Array Decl", out, ctx);
+        json_child("array values", params, out, ctx);
+        json_close(out, ctx);
+    }
+
+    void TupleDecl::json(std::ostream& out, AST_print_context& ctx) {
+        json_head("Tuple Decl", out, ctx);
+        json_child("tuple values", params, out, ctx);
+        json_close(out, ctx);
+    }
+
     void Not::json(std::ostream& out, AST_print_context& ctx) {
         json_head("Not", out, ctx);
         json_child("left_", left_, out, ctx);
