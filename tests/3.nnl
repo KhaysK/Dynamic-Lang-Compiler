@@ -1,32 +1,6 @@
-var a, b, c;
-readInt a;
-readInt b;
-readReal c;
-
-# simple if statement
-# available relations: <, >, <=, >=, ==, !=
-if a <= b
-then
-	print "a is less than b or equal";
-else
-	print "a is greater than b";
-end
-	
-# combined if statement
-# available operators: and, or
-if a > b and a > c
-then
-	print "a is greater than b and c";
+var f = func(a, b) do
+	var c = a + 1;
+	return c;
 end
 
-if a < 5
-then
-	print "a is less then 5";
-else
-	if a > 5
-	then
-		print "a is more than 5";
-	else
-		print "a is 5";
-	end
-end
+d = f(1, 2);

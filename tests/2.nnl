@@ -1,10 +1,8 @@
-# we can read variables from standard input
-var a, b, c;
-readInt a;
-readReal b;
-readString c;
+a = 3;
+b = 4;
 
-# we can print variable (or expression)
-print a;
-print a + b; # here implicit conversion to `real` happens
-print "I can concatenate strings! look: " + c;
+while true
+loop
+    b = 4;
+    d = x + 1;
+end

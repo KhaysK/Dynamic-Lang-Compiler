@@ -1,26 +1,8 @@
-# btw, this is comment ;)
+a = 3;
+b = 4;
 
-# create mutable variable
-var x = 1.23;
-
-# reassign mutable variable to another type
-x = "Hello"; # OK
-
-# assign multiple variables in one line
-var a = 30, b = false;
-
-# can create variable via expression
-var g = 10, h = 20;
-var j = g * h / 2;
-
-# initialize empty variable (it has special type `null`)
-var c; # c is null
-
-# create literal variable 
-const y = "This is string";
-
-# can check type of variable
-var isYString = (y is string); # isYString = true
-
-# can check for null
-var isYNull = (y is null); # isYNull = false
+while true
+loop
+    b = 4;
+    d = a + 1;
+end

@@ -1,13 +1,6 @@
-# while loops
-var t = 0;
-while t < 10
-loop
-	print t;
-	t += 1;
+var f = func(a, b) do
+	var c = a + 1;
+	return c;
 end
 
-# for loop
-for var i = 0; i < 10; i += 1
-loop
-	print i * i;
-end
+d = f(1, 2, 3);

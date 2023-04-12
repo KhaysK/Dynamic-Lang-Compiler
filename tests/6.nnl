@@ -1,10 +1,9 @@
-# arrays behave like `real` associative array with integers as keys
-# also arrays are indexed starting from 1
+a = 10;
 
-var arr = [];
-arr[1] = "hi";
-arr[15] = 3.14;
-var kek = [12, 23, "lol"];
+while a > 5
+loop
+    x = 10;
+    a = a - 1;
+end
 
-print arr; # {1: "hi", 15: 3.14}
-
+y = x;
