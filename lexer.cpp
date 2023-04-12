@@ -5,6 +5,7 @@
 #include <regex>
 
 #include "parser.tab.hpp"
+#include "ASTContext.hpp"
 #include "ast.hpp"
 
 enum TokenType : int {
@@ -574,10 +575,21 @@ yy::parser::symbol_type get_next_token() {
     }
 }
 
-int main() {
-    string filename = "tests/7.nnl";
+int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        cerr << "Usage: " << argv[0] << " FILENAME\n";
+        return 1;
+    }
+
+    string filename(argv[1]);
 
     ifstream file(filename);
+    if (!file.good()) {
+        cerr << "Failed to open " << filename << "\n";
+        cerr << "Probably file does not exist\n";
+        return 1;
+    }
+
     string line;
     string input;
 
@@ -597,6 +609,8 @@ int main() {
     p.parse();
 
     cout << ast_root->str() << '\n';
+
+    AST::ASTContext *ctx = new AST::ASTContext(ast_root);
 
     return 0;
 }

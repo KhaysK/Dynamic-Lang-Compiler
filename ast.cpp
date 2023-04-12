@@ -44,6 +44,11 @@ namespace AST {
         json_close(out, ctx);
     }
 
+    std::vector<ASTNode*> Block::list_nodes() {
+        return std::vector<ASTNode*>(this->stmts_);
+    }
+
+
     void Assign::json(std::ostream& out, AST_print_context& ctx) {
         json_head("Assign", out, ctx);
         json_child("lexpr_", lexpr_, out, ctx);

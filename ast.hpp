@@ -26,6 +26,7 @@ namespace AST {
             json(ss, ctx);
             return ss.str();
         }
+
     protected:
         void json_indent(std::ostream& out, AST_print_context& ctx);
         void json_head(std::string node_kind, std::ostream& out, AST_print_context& ctx);
@@ -39,6 +40,8 @@ namespace AST {
         explicit Block() : stmts_{std::vector<ASTNode*>()} {}
         void append(ASTNode* stmt) { stmts_.push_back(stmt); }
         void json(std::ostream& out, AST_print_context& ctx) override;
+
+        std::vector<ASTNode*> list_nodes();
      };
 
 
@@ -49,6 +52,14 @@ namespace AST {
         Assign(ASTNode &lexpr, ASTNode &rexpr) :
            lexpr_{lexpr}, rexpr_{rexpr} {};
         void json(std::ostream& out, AST_print_context& ctx) override;
+
+        ASTNode *get_lexpr() const {
+            return &lexpr_;
+        }
+
+        ASTNode *get_rexpr() const {
+            return &rexpr_;
+        }
     };
 
     class If : public ASTNode {
@@ -80,6 +91,10 @@ namespace AST {
     public:
         explicit Ident(std::string txt) : text_{txt} {}
         void json(std::ostream& out, AST_print_context& ctx) override;
+
+        std::string get_name() const {
+            return text_;
+        }
     };
 
     // Leaf nodes
@@ -139,6 +154,14 @@ namespace AST {
                 opsym{sym}, left_{l}, right_{r} {};
     public:
         void json(std::ostream& out, AST_print_context& ctx) override;
+
+        ASTNode *get_left() const {
+            return &left_;
+        }
+
+        ASTNode *get_right() const {
+            return &right_;
+        }
     };
 
     class Read : public BinOp {
@@ -251,6 +274,10 @@ namespace AST {
         explicit While(ASTNode &cond, Block &body) :
             while_cond_{cond}, while_body_{body} {};
         void json(std::ostream& out, AST_print_context& ctx) override;
+
+        Block *get_body() const {
+            return &while_body_;
+        }
     };
 
     class For : public ASTNode {
@@ -284,6 +311,14 @@ namespace AST {
         explicit FuncDecl(Block &func_params, Block &func_body, ASTNode &func_expr) :
             params{func_params}, funcBody{func_body}, expr{func_expr} {};
         void json(std::ostream& out, AST_print_context& ctx) override;
+
+        Block *get_params() const {
+            return &params;
+        }
+
+        Block *get_body() const {
+            return &funcBody;
+        }
     };
 
     class FuncCall: public ASTNode {
@@ -293,6 +328,14 @@ namespace AST {
         explicit FuncCall(ASTNode &func_ident, Block &func_params) :
             ident(func_ident), params{func_params} {};
         void json(std::ostream& out, AST_print_context& ctx) override;
+
+        Ident *get_ident() const {
+            return dynamic_cast<Ident*>(&ident);
+        }
+
+        Block *get_params() const {
+            return &params;
+        }
     };
 
 
