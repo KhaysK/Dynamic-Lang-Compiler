@@ -228,7 +228,6 @@ ASTContext::ASTContext(ASTNode *ast_root) {
                         << v->get_name()
                         << " was not used anywhere. You can remove it.\n";
         }
-        std::cout << "Destroyed (" << v->get_name() << ")\n";
     }
 }
 
