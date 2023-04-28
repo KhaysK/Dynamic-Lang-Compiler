@@ -5,6 +5,7 @@
 #include <vector>
 #include <iostream>
 #include <assert.h>
+#include <stdio.h>
 
 namespace AST {
     class AST_print_context {
@@ -33,23 +34,46 @@ namespace AST {
         void json_child(std::string field, ASTNode& child, std::ostream& out, AST_print_context& ctx, char sep=',');
     };
 
+    class AssignMod : public ASTNode {
+        std::string mod;
+    public:
+        explicit AssignMod(std::string txt) : mod{txt} {}
+        void json(std::ostream& out, AST_print_context& ctx) override;
+        void setMod(std::string new_mode) { mod = new_mode; }
+        std::string getMod() { return mod; }
+    };
+
+    class Assign : public ASTNode {
+        AssignMod &mod_;
+        ASTNode &lexpr_;
+        ASTNode &rexpr_;
+    public:
+        Assign(AssignMod &mod, ASTNode &lexpr, ASTNode &rexpr) :
+           mod_{mod}, lexpr_{lexpr}, rexpr_{rexpr} {};
+        void set(AssignMod& mod) {
+            mod_.setMod(mod.getMod());
+        }
+        void json(std::ostream& out, AST_print_context& ctx) override;
+    };
+
     class Block : public ASTNode {
         std::vector<ASTNode*> stmts_;
     public:
         explicit Block() : stmts_{std::vector<ASTNode*>()} {}
+        void flat(Block* block) {
+            for (auto &i : block->stmts_) {
+                stmts_.push_back(i);
+            }
+        }
+        void distribute(ASTNode* mod) {
+            for (ASTNode *i: stmts_) {
+                Assign* assign = dynamic_cast<Assign*>(i);
+                assign->set(*dynamic_cast<AssignMod*>(mod));
+            }
+        }
         void append(ASTNode* stmt) { stmts_.push_back(stmt); }
         void json(std::ostream& out, AST_print_context& ctx) override;
      };
-
-
-    class Assign : public ASTNode {
-        ASTNode &lexpr_;
-        ASTNode &rexpr_;
-    public:
-        Assign(ASTNode &lexpr, ASTNode &rexpr) :
-           lexpr_{lexpr}, rexpr_{rexpr} {};
-        void json(std::ostream& out, AST_print_context& ctx) override;
-    };
 
     class If : public ASTNode {
         ASTNode &cond_;

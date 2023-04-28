@@ -46,8 +46,9 @@ namespace AST {
 
     void Assign::json(std::ostream& out, AST_print_context& ctx) {
         json_head("Assign", out, ctx);
-        json_child("lexpr_", lexpr_, out, ctx);
-        json_child("rexpr_", rexpr_, out, ctx, ' ');
+        json_child("mod", mod_, out, ctx);
+        json_child("name", lexpr_, out, ctx);
+        json_child("value", rexpr_, out, ctx, ' ');
         json_close(out, ctx);
      }
 
@@ -131,6 +132,12 @@ namespace AST {
     void Ident::json(std::ostream& out, AST_print_context& ctx) {
         json_head("Ident", out, ctx);
         out << "\"text_\" : \"" << text_ << "\"";
+        json_close(out, ctx);
+    }
+
+    void AssignMod::json(std::ostream& out, AST_print_context& ctx) {
+        json_head("AssignMod", out, ctx);
+        out << "\"assign mode\" : \"" << mod << "\"";
         json_close(out, ctx);
     }
 
