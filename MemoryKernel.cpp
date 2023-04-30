@@ -1,7 +1,9 @@
 #include "MemoryKernel.hpp"
 
+#include <fstream>
 #include <iostream>
 #include <regex>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -50,8 +52,13 @@ MemObject::MemObject(ObjectType type, std::string name, std::string value)
     : type(type), name(name), value(value), num_references(0){};
 
 MemObject::~MemObject() {
+  static std::fstream out;
+
+  if (!out.is_open()) out.open(".nnl_warn", std::ios_base::app);
+
   if (!count_references()) {
-    // TODO: implement warning
+    out << "Warning: variable " << this->get_name()
+        << " was not used anywhere. You can remove it.\n";
   }
 }
 
@@ -83,34 +90,119 @@ MemFunction::MemFunction(std::string name, AST::Block *entry_point,
 
 AST::Block *MemFunction::get_entry_point() const { return this->entry_point; }
 
+std::vector<std::string> MemFunction::get_arg_names() const {
+  return std::vector<std::string>(this->arg_names);
+}
+
 unsigned int MemFunction::count_args() { return this->arg_names.size(); }
 
-bool MemFunction::prep_mem(MemoryKernel &mem, std::vector<MemObject> args) {
-  // TODO: prepare memory before function call
-  return false;
+bool MemFunction::prep_mem(MemoryKernel &mem, std::vector<MemObject *> args) {
+  /**
+   * There might array elements be
+   * passed, and all array element should be considered
+   * as single parameter
+   */
+
+  std::set<std::string> vars;
+  std::set<std::string> args_set(this->arg_names.begin(),
+                                 this->arg_names.end());
+
+  for (auto &arg : args) {
+    std::string name = arg->get_name();
+    if (is_array_element(arg->get_name()))
+      name = extract_array_name(arg->get_name());
+
+    vars.insert(name);
+
+    // if wrong parameters are passed, then function call should abort
+    if (args_set.find(name) == args_set.end()) return false;
+    args_set.erase(name);
+  }
+
+  if (this->count_args() != vars.size() || args_set.size() != 0) return false;
+
+  /**
+   * Should save object to memory directly
+   * overpassing `put_object` method because
+   * it is required to 'shadow' global variables
+   * with same names as parameters if they exist
+   */
+
+  // after all checks are passed, just push args to current scope
+  for (MemObject *obj : args) mem.scopes[mem.scopes.size() - 1].push_back(obj);
+
+  return true;
 }
 
 /**************************************************
  *           MemoryKernel Implementation
  **************************************************/
 
+bool MemoryKernel::put_primary_element(MemObject *obj) {
+  MemObject *_obj = get_object(obj->get_name());
+
+  if (_obj) {
+    *_obj = *obj;
+    return false;
+  }
+
+  scopes[scopes.size() - 1].push_back(obj);
+  return true;
+}
+
+bool MemoryKernel::put_array_element(MemObject *obj) {
+  /**
+   * First, check out if the array exists, then
+   * if not - place element in the current scope.
+   * Otherwise place element in the scope of array
+   */
+
+  std::string arr_name = extract_array_name(obj->get_name());
+  for (int k = this->scopes.size() - 1; k >= 0; --k) {
+    auto &scope = scopes[k];
+    for (int i = scope.size() - 1; i >= 0; --i) {
+      if (is_array_element(scope[i]->get_name()) &&
+          extract_array_name(scope[i]->get_name()) == arr_name) {
+        scope.push_back(obj);
+        return false;
+      }
+    }
+  }
+
+  this->scopes[this->scopes.size() - 1].push_back(obj);
+
+  return true;
+}
+
 MemoryKernel::MemoryKernel() {
   this->scopes = std::vector<std::vector<MemObject *>>();
 }
 
 MemObject *MemoryKernel::get_object(std::string name) const {
-  for (auto &scope : this->scopes) {
-    for (MemObject *object : scope) {
-      if (object->get_name() == name) return object;
+  /**
+   * It is neccessary to traverse memory in inversed
+   * order (from the deepest scope to the oldest)
+   * because function calls shadows global variables
+   * if their name is the same as the name of some
+   * variable. After function has exited and scope
+   * had been cleaned, the global variable should
+   * become available again.
+   */
+  for (int k = this->scopes.size() - 1; k >= 0; --k) {
+    auto &scope = scopes[k];
+    for (int i = scope.size() - 1; i >= 0; --i) {
+      if (scope[i]->get_name() == name) return scope[i];
     }
   }
 
   return nullptr;
 }
 
-bool MemoryKernel::put_object(std::string name, MemObject *obj) {
-  // TODO: Implement
-  return false;
+bool MemoryKernel::put_object(MemObject *obj) {
+  if (is_array_element(obj->get_name()))
+    return MemoryKernel::put_array_element(obj);
+  else
+    return MemoryKernel::put_primary_element(obj);
 }
 
 bool MemoryKernel::drop_object(std::string name) {
@@ -145,6 +237,23 @@ void MemoryKernel::dump_mem() const {
   std::cout << "}\n";
 }
 
+std::vector<MemObject *> MemoryKernel::extract_array(std::string name) {
+  std::stringstream ss;
+  ss << "^" << name << "@..*";
+
+  // pattern is "^NAME@..*"
+  std::regex pattern(ss.str());
+
+  std::vector<MemObject *> arr;
+  for (auto &scope : this->scopes) {
+    for (MemObject *obj : scope) {
+      if (std::regex_match(obj->get_name(), pattern)) arr.push_back(obj);
+    }
+  }
+
+  return arr;
+}
+
 /**************************************************
  *         Local Functions Implementation
  **************************************************/
@@ -165,10 +274,4 @@ static std::string extract_array_name(std::string name) {
   }
 
   return "";
-}
-
-static std::vector<std::pair<std::string, MemObject *>> extract_array(
-    std::string name) {
-  // TODO: Implement
-  return std::vector<std::pair<std::string, MemObject *>>();
 }
