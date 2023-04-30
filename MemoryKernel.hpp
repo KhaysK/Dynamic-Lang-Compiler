@@ -41,7 +41,7 @@ class MemObject {
   MemObject(ObjectType type, std::string name, std::string value);
 
   // show warning if object was not used
-  ~MemObject();
+  virtual ~MemObject();
 
   // getters
   ObjectType get_type() const;
@@ -63,7 +63,7 @@ class MemObject {
  * useful metainformation about function object
  *
  */
-class MemFunction : MemObject {
+class MemFunction : public MemObject {
  private:
   // entry point for function
   AST::Block *entry_point;

@@ -34,16 +34,6 @@ static bool is_array_element(std::string name);
  */
 static std::string extract_array_name(std::string name);
 
-/**
- * @brief Extract array as list from memory
- *
- * @param name Name of array to be extracted
- * @return vector of pairs, where key is name of element
- *         without array prefix and value is pointer to MemObject
- */
-static std::vector<std::pair<std::string, MemObject *>> extract_array(
-    std::string name);
-
 /**************************************************
  *           MemObject Implementation
  **************************************************/
@@ -54,11 +44,12 @@ MemObject::MemObject(ObjectType type, std::string name, std::string value)
 MemObject::~MemObject() {
   static std::fstream out;
 
-  if (!out.is_open()) out.open(".nnl_warn", std::ios_base::app);
+  if (!out.is_open()) out.open(".nnl_warn", std::ios_base::out);
 
   if (!count_references()) {
     out << "Warning: variable " << this->get_name()
         << " was not used anywhere. You can remove it.\n";
+    out.flush();
   }
 }
 
@@ -102,21 +93,32 @@ bool MemFunction::prep_mem(MemoryKernel &mem, std::vector<MemObject *> args) {
    * passed, and all array element should be considered
    * as single parameter
    */
-
+  std::set<std::string> all_elements;
   std::set<std::string> vars;
   std::set<std::string> args_set(this->arg_names.begin(),
                                  this->arg_names.end());
 
+  std::set<std::string> arr_appeared;
+
   for (auto &arg : args) {
     std::string name = arg->get_name();
-    if (is_array_element(arg->get_name()))
+
+    // return error if same element appeared multiple times
+    if (all_elements.find(name) != all_elements.end()) return false;
+    all_elements.insert(name);
+
+    if (is_array_element(arg->get_name())) {
       name = extract_array_name(arg->get_name());
+      arr_appeared.insert(name);
+    }
 
     vars.insert(name);
 
     // if wrong parameters are passed, then function call should abort
-    if (args_set.find(name) == args_set.end()) return false;
-    args_set.erase(name);
+    if (args_set.find(name) != args_set.end())
+      args_set.erase(name);
+    else if (arr_appeared.find(name) == arr_appeared.end())
+      return false;
   }
 
   if (this->count_args() != vars.size() || args_set.size() != 0) return false;
@@ -222,17 +224,21 @@ void MemoryKernel::enter_scope() {
   scopes.push_back(std::vector<MemObject *>());
 }
 
-void MemoryKernel::exit_scope() { scopes.pop_back(); }
+void MemoryKernel::exit_scope() {
+  int n = scopes.size() - 1;
+  for (int i = scopes[n].size() - 1; i >= 0; --i) delete scopes[n][i];
+  scopes.pop_back();
+}
 
 void MemoryKernel::dump_mem() const {
   std::cout << "{\n";
   int depth = 1;
   for (auto &scope : this->scopes) {
     for (MemObject *obj : scope) {
-      for (int i = 0; i < depth; ++i) std::cout << " ";
+      for (int i = 0; i < depth; ++i) std::cout << "  ";
       std::cout << obj->get_name() << " = " << obj->get_value() << "\n";
-      ++depth;
     }
+    ++depth;
   }
   std::cout << "}\n";
 }
