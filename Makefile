@@ -3,9 +3,9 @@ CFLAGS=-Wno-c99-designator
 
 all: bin/compiler
 
-bin/compiler: obj/parser.tab.o obj/lexer.o obj/ast.o
+bin/compiler: obj/parser.tab.o obj/lexer.o obj/ast.o obj/MemoryKernel.o
 	mkdir -p bin/
-	$(CC) $(CFLAGS) obj/parser.tab.o obj/lexer.o obj/ast.o -o bin/compiler
+	$(CC) $(CFLAGS) obj/parser.tab.o obj/lexer.o obj/ast.o obj/MemoryKernel.o -o bin/compiler
 
 obj/lexer.o: lexer.cpp
 	mkdir -p obj/
@@ -18,6 +18,10 @@ obj/parser.tab.o: parser.tab.cpp
 obj/ast.o: ast.cpp
 	mkdir -p obj/
 	$(CC) $(CFLAGS) -c ast.cpp -o obj/ast.o
+
+obj/MemoryKernel.o: MemoryKernel.cpp MemoryKernel.hpp ast.hpp
+	mkdir -p obj/
+	$(CC) $(CFLAGS) -c MemoryKernel.cpp -o obj/MemoryKernel.o
 
 parser.tab.cpp: parser.ypp
 	bison -d parser.ypp -Wcounterexamples
