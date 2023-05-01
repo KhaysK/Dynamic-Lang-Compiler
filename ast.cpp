@@ -33,9 +33,9 @@ namespace AST {
 
     void Block::json(std::ostream& out, AST_print_context& ctx) {
         json_head("Block", out, ctx);
-        out << "\"stmts_\" : [";
+        out << "\"nodes\" : [";
         auto sep = "";
-        for (ASTNode *stmt: stmts_) {
+        for (ASTNode *stmt: nodes) {
             out << sep;
             stmt->json(out, ctx);
             sep = ", ";
@@ -46,32 +46,40 @@ namespace AST {
 
     void Assign::json(std::ostream& out, AST_print_context& ctx) {
         json_head("Assign", out, ctx);
-        json_child("lexpr_", lexpr_, out, ctx);
-        json_child("rexpr_", rexpr_, out, ctx, ' ');
+        json_child("mod", mod, out, ctx);
+        json_child("name", name, out, ctx);
+        json_child("value", value, out, ctx, ' ');
         json_close(out, ctx);
      }
 
     void If::json(std::ostream& out, AST_print_context& ctx) {
         json_head("If", out, ctx);
-        json_child("cond_", cond_, out, ctx);
-        json_child("true_part_", ifpart_, out, ctx);
-        json_child("else_part_", elsepart_, out, ctx, ' ');
+        json_child("condition", cond, out, ctx);
+        json_child("true_block", true_block, out, ctx);
+        json_child("else_block", else_block, out, ctx, ' ');
         json_close(out, ctx);
     }
 
     void While::json(std::ostream& out, AST_print_context& ctx) {
         json_head("While", out, ctx);
-        json_child("while_cond_", while_cond_, out, ctx);
-        json_child("while_body_", while_body_, out, ctx);
+        json_child("while_condition", while_cond, out, ctx);
+        json_child("while_block", while_block, out, ctx);
         json_close(out, ctx);
     }
 
     void For::json(std::ostream& out, AST_print_context& ctx) {
         json_head("For", out, ctx);
-        json_child("decl_", decl, out, ctx);
-        json_child("cond_", cond, out, ctx);
-        json_child("iter_", iter, out, ctx);
-        json_child("body_", for_body, out, ctx);
+        out << "\"assigns\" : [";
+        auto sep = "";
+        for (ASTNode *stmt: nodes) {
+            out << sep;
+            stmt->json(out, ctx);
+            sep = ", ";
+        }
+        out << "]";
+        json_child("conditions", cond, out, ctx);
+        json_child("iterations", iter, out, ctx);
+        json_child("for_block", for_block, out, ctx);
         json_close(out, ctx);
     }
 
@@ -85,7 +93,14 @@ namespace AST {
 
     void FuncDecl::json(std::ostream& out, AST_print_context& ctx) {
         json_head("Func Declaration", out, ctx);
-        json_child("func_params", params, out, ctx);
+        out << "\"params\" : [";
+        auto sep = "";
+        for (ASTNode *stmt: params) {
+            out << sep;
+            stmt->json(out, ctx);
+            sep = ", ";
+        }
+        out << "]";
         json_child("func_body", funcBody, out, ctx);
         json_child("func_expr", expr, out, ctx);
         json_close(out, ctx);
@@ -94,49 +109,64 @@ namespace AST {
     void FuncCall::json(std::ostream& out, AST_print_context& ctx) {
         json_head("Func Call", out, ctx);
         json_child("func ident", ident, out, ctx);
-        json_child("func params", params, out, ctx);
+        out << "\"call params\" : [";
+        auto sep = "";
+        for (ASTNode *stmt: params) {
+            out << sep;
+            stmt->json(out, ctx);
+            sep = ", ";
+        }
+        out << "]";
         json_close(out, ctx);
     }
 
     void ArrayDecl::json(std::ostream& out, AST_print_context& ctx) {
         json_head("Array Decl", out, ctx);
-        json_child("array values", params, out, ctx);
+        out << "\"array params\" : [";
+        auto sep = "";
+        for (ASTNode *stmt: params) {
+            out << sep;
+            stmt->json(out, ctx);
+            sep = ", ";
+        }
+        out << "]";
         json_close(out, ctx);
     }
 
     void TupleDecl::json(std::ostream& out, AST_print_context& ctx) {
         json_head("Tuple Decl", out, ctx);
-        json_child("tuple values", params, out, ctx);
+        out << "\"tuple params\" : [";
+        auto sep = "";
+        for (ASTNode *stmt: params) {
+            out << sep;
+            stmt->json(out, ctx);
+            sep = ", ";
+        }
+        out << "]";
         json_close(out, ctx);
     }
 
     void Not::json(std::ostream& out, AST_print_context& ctx) {
         json_head("Not", out, ctx);
-        json_child("left_", left_, out, ctx);
+        json_child("left", left, out, ctx);
         json_close(out, ctx);
     }
 
     void Print::json(std::ostream& out, AST_print_context& ctx) {
         json_head("Print", out, ctx);
-        json_child("left_", left_, out, ctx);
+        json_child("left", left, out, ctx);
         json_close(out, ctx);
     }
 
-    void AsBool::json(std::ostream& out, AST_print_context& ctx) {
-        json_head("AsBool", out, ctx);
-        json_child("left_", left_, out, ctx);
-        json_close(out, ctx);
-    }
-
-    void Ident::json(std::ostream& out, AST_print_context& ctx) {
-        json_head("Ident", out, ctx);
-        out << "\"text_\" : \"" << text_ << "\"";
+    void AssignMod::json(std::ostream& out, AST_print_context& ctx) {
+        json_head("AssignMod", out, ctx);
+        out << "\"assign mode\" : \"" << mod << "\"";
         json_close(out, ctx);
     }
 
     void LeafNode::json(std::ostream& out, AST_print_context& ctx) {
         json_head(leaf_type, out, ctx);
-        out << "\"value_\" : \"" << value_ << "\"";
+        out << "\"value\" : \"" << value << "\"";
         json_close(out, ctx);
     }
 
@@ -148,8 +178,8 @@ namespace AST {
 
     void BinOp::json(std::ostream& out, AST_print_context& ctx) {
         json_head(opsym, out, ctx);
-        json_child("left_", left_, out, ctx);
-        json_child("right_", right_, out, ctx, ' ');
+        json_child("left", left_, out, ctx);
+        json_child("right", right_, out, ctx, ' ');
         json_close(out, ctx);
     }
 
