@@ -87,7 +87,7 @@
 %token XOR
 
 // AST Nodes
-%type <AST::Block*> block if_alternatives list_assignemtns assignment function_params
+%type <AST::Block*> block if_alternatives list_assignemtns assignment function_params function_call_params
 %type <AST::ASTNode*> program statement operation operation_op
 %type <AST::ASTNode*> if_statement loop_statement function_call for_expression function_declaration
 %type <AST::ASTNode*> expression term factor assignment_value assignment_part assignment_type tuple_element
@@ -119,7 +119,7 @@ block
 	}
 	| operation { $$ = new AST::Block(); $$->append($1); }
 	| block statement {
-		if (dynamic_cast<AST::Block*>($1)) {
+		if (dynamic_cast<AST::Block*>($2)) {
 			AST::Block* list = dynamic_cast<AST::Block*>($2);
 			$1->flat(list);
 		} else {
@@ -185,16 +185,20 @@ assignment_part
 		AST::Ident* ident = new AST::Ident($1); 
 		AST::NumberConst* idx = new AST::NumberConst($3);
 		AST::ArrayEl* elem = new AST::ArrayEl(*ident, *idx);
-		$$ = new AST::ArrayAssign(*elem, *$6);
+		AST::AssignMod* mod = new AST::AssignMod("assign");
+		$$ = new AST::Assign(*mod, *elem,*$6);
 	}
 	;
 
 assignment_value
 	: LBRACKET RBRACKET { 
-		AST::Block* empty = new AST::Block();
-		$$ = new AST::ArrayDecl(*empty);
+		$$ = new AST::ArrayDecl();
 	 }
-	| LBRACKET function_params RBRACKET { $$ = new AST::ArrayDecl(*$2); }
+	| LBRACKET function_call_params RBRACKET {
+		AST::ArrayDecl* decl = new AST::ArrayDecl();
+		decl->flat($2);
+		$$ = decl;
+	}
 	;
 
 tuple_element
@@ -238,7 +242,9 @@ factor
 	| function_call { $$ = $1; }
 	| tuple_element { $$ = $1; }
 	| LBRACE list_assignemtns RBRACE {
-		$$ = new AST::TupleDecl(*$2);
+		AST::TupleDecl* decl = new AST::TupleDecl();
+		decl->flat($2);
+		$$ = decl;
 	 }
 	| IDENTIFIER LBRACKET NUMBER RBRACKET { 
 		AST::Ident* ident = new AST::Ident($1); 
@@ -295,7 +301,7 @@ conditional_expression
 	| expression GREATER_E expression { $$ = new AST::Greater_E(*$1, *$3); }
 	| expression EQUAL expression { $$ = new AST::Equals(*$1, *$3); }
 	| expression NOT_EQUAL expression { $$ = new AST::Not_Equals(*$1, *$3); }
-	| expression { $$ = new AST::AsBool(*$1); }
+	| expression { $$ = $1; }
 	;
 
 if_alternatives
@@ -306,7 +312,9 @@ if_alternatives
 loop_statement
 	: WHILE_L conditional_expression LOOP block END { $$ = new AST::While(*$2, *$4); }
 	| FOR_L assignment conditional_expression SEMICOLON for_expression LOOP block END {
-		$$ = new AST::For(*$2, *$3, *$5, *$7);
+		AST::For* fr = new AST::For(*$3, *$5, *$7);
+		fr->flat($2);
+		$$ = fr;
 	 }
 	;
 
@@ -319,19 +327,41 @@ for_expression
 
 function_declaration
 	: FUNC LPAREN function_params RPAREN DO block RETURN expression SEMICOLON END { 
-		AST::AsBool* expr = new AST::AsBool(*$8);
-		$$ = new AST::FuncDecl(*$3, *$6, *expr);
+		AST::FuncDecl* decl = new AST::FuncDecl(*$6, *$8);
+		decl->flat($3);
+		$$ = decl;
 	 }
 
 function_call
-	: IDENTIFIER LPAREN function_params RPAREN { 
+	: IDENTIFIER LPAREN function_call_params RPAREN { 
 		AST::Ident* ident = new AST::Ident($1);
-		$$ = new AST::FuncCall(*ident, *$3);
+		AST::FuncCall* call = new AST::FuncCall(*ident);
+		call->flat($3);
+		$$ = call;
 	 }
 
 function_params
-	: function_params COMMA factor { $1->append($3); $$ = $1; }
-	| factor { $$ = new AST::Block(); $$->append($1); }
+	: function_params COMMA IDENTIFIER {
+		AST::Ident* ident = new AST::Ident($3);
+		$1->append(ident);
+		$$ = $1;
+	}
+	| IDENTIFIER {
+		$$ = new AST::Block();
+		AST::Ident* ident = new AST::Ident($1);
+		$$->append(ident);
+	}
+	;
+
+function_call_params
+	: function_call_params COMMA expression {
+		$1->append($3);
+		$$ = $1;
+	}
+	| expression {
+		$$ = new AST::Block();
+		$$->append($1);
+	}
 	;
 
 %%
