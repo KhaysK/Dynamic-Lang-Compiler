@@ -6,6 +6,7 @@
 #include <iostream>
 #include <assert.h>
 #include <stdio.h>
+#include <unordered_map>
 
 namespace AST {
     class AST_print_context {
@@ -16,6 +17,11 @@ namespace AST {
         void dedent() { --indent_; }
     };
 
+    class eval_context {
+    public:
+        std::unordered_map<std::string,int> symbol_table;
+        explicit eval_context() { }
+    };
 
     /**
      * Кирпичик / база / основа
@@ -27,7 +33,7 @@ namespace AST {
     class ASTNode {
     public:
         virtual void json(std::ostream& out, AST_print_context& ctx) = 0;
-
+        virtual std::string eval(eval_context& ctx) = 0;
         std::string str() {
             std::stringstream ss;
             AST_print_context ctx;
@@ -127,6 +133,12 @@ namespace AST {
         void append(ASTNode* node) { nodes.push_back(node); }
         std::vector<ASTNode*> getNodes() { return nodes; }
         void json(std::ostream& out, AST_print_context& ctx) override;
+        std::string eval(eval_context& ctx){
+            for(ASTNode* node: nodes){
+                node->eval(ctx);
+            }
+            return "Done";
+        }
      };
 
     /**
@@ -144,6 +156,23 @@ namespace AST {
         explicit If(ASTNode &cond, Block &ifpart, Block &elsepart) :
             cond{cond}, true_block{ifpart}, else_block{elsepart} { };
         void json(std::ostream& out, AST_print_context& ctx) override;
+        std::string eval(eval_context& ctx){
+            if(dynamic_cast<BoolConst*>(&cond)){
+                if (cond.eval(ctx) == "true")
+                    return true_block.eval(ctx);
+                else_block.eval(ctx);
+            }else if(dynamic_cast<NumberConst*>(&cond)){
+                if (cond.eval(ctx) != "0")
+                    return true_block.eval(ctx);
+                else_block.eval(ctx);
+            }else if(dynamic_cast<StringConst*>(&cond)){
+                if (cond.eval(ctx).length() > 0)
+                    return true_block.eval(ctx);
+                else_block.eval(ctx);
+            }else {
+
+            }
+        }
     };
 
     /**
@@ -154,6 +183,10 @@ namespace AST {
     public:
         explicit Print(ASTNode &l) : left{l} {}
         void json(std::ostream& out, AST_print_context& ctx) override;
+        std::string eval(eval_context& ctx){
+            printf("%s\n", left.eval(ctx));
+            return left.eval(ctx); // Returns printed value but it's useless anyway 
+        }
     };
 
     // Leaf nodes
@@ -174,6 +207,9 @@ namespace AST {
                 leaf_type{l_t}, value{v} {};
     public:
         void json(std::ostream& out, AST_print_context& ctx) override;
+        std::string eval(eval_context& ctx){
+            return value;
+        }
     };
 
     /**
@@ -184,7 +220,7 @@ namespace AST {
     class NumberConst : public LeafNode {
     public:
         NumberConst(std::string v) : 
-            LeafNode(std::string("Number"), v) {};
+            LeafNode(std::string("Number"), v) {};  
     };
 
     /**
@@ -226,6 +262,14 @@ namespace AST {
     public:
         VarType(std::string v) :
             LeafNode(std::string("VarType"), v) {};
+        std::string eval(eval_context& ctx) {
+            if(){
+                return "Int";
+            } else if (){
+                return "Bool";
+            }
+            return "String";
+        }; 
     };
 
     class OpType : public LeafNode {
@@ -292,6 +336,18 @@ namespace AST {
     public:
         IsOp(ASTNode &l, ASTNode &r) :
                 BinOp(std::string("Is"),  l, r) {};
+        std::string eval(eval_context& ctx) {
+            if(dynamic_cast<NumberConst*>(&left_) && right_.eval(ctx) == "Number"){
+                return "true";
+            } else if (dynamic_cast<BoolConst*>(&left_) && right_.eval(ctx) == "Bool"){
+                return "true";
+            } else if (dynamic_cast<StringConst*>(&left_) && right_.eval(ctx) == "String"){
+                return "true";
+            } else if (dynamic_cast<NullConst*>(&left_) && right_.eval(ctx) == "Null"){
+                return "true";
+            }
+            return "false";
+        }; 
     };
 
     /**
@@ -301,6 +357,17 @@ namespace AST {
     public:
         Plus(ASTNode &l, ASTNode &r) :
                 BinOp(std::string("Plus"),  l, r) {};
+        std::string eval(eval_context& ctx) {
+            if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
+                int result = std::stoi(left_.eval(ctx)) + std::stoi(right_.eval(ctx));
+                return std::to_string(result);
+            } else if (dynamic_cast<BoolConst*>(&left_) && dynamic_cast<BoolConst*>(&right_)){
+                if (left_.eval(ctx) == "false" && right_.eval(ctx) == "false")
+                    return "false";
+                return "true";
+            }
+            return left_.eval(ctx) + right_.eval(ctx);
+        }; 
     };
 
     /**
@@ -310,6 +377,17 @@ namespace AST {
     public:
         Minus(ASTNode &l, ASTNode &r) :
             BinOp(std::string("Minus"),  l, r) {};
+        std::string eval(eval_context& ctx) {
+            if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
+                int result = std::stoi(left_.eval(ctx)) - std::stoi(right_.eval(ctx));
+                return std::to_string(result);
+            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<Ident*>(&left_) || 
+                    dynamic_cast<Ident*>(&left_) && dynamic_cast<NumberConst*>(&left_) ||
+                    dynamic_cast<NumberConst*>(&left_) && dynamic_cast<Ident*>(&left_)){
+                
+            }
+            return "Invalid operation";
+        };
     };
 
     /**
@@ -319,6 +397,17 @@ namespace AST {
     public:
         Times(ASTNode &l, ASTNode &r) :
                 BinOp(std::string("Times"),  l, r) {};
+        std::string eval(eval_context& ctx) {
+            if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
+                int result = std::stoi(left_.eval(ctx)) * std::stoi(right_.eval(ctx));
+                return std::to_string(result);
+            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<Ident*>(&left_) || 
+                    dynamic_cast<Ident*>(&left_) && dynamic_cast<NumberConst*>(&left_) ||
+                    dynamic_cast<NumberConst*>(&left_) && dynamic_cast<Ident*>(&left_)){
+                
+            }
+            return "Invalid operation";
+        };
     };
 
     /**
@@ -328,6 +417,17 @@ namespace AST {
     public:
         Div(ASTNode &l, ASTNode &r) :
                 BinOp(std::string("Div"),  l, r) {};
+        std::string eval(eval_context& ctx) {
+            if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
+                int result = std::stoi(left_.eval(ctx)) / std::stoi(right_.eval(ctx));
+                return std::to_string(result);
+            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<Ident*>(&left_) || 
+                    dynamic_cast<Ident*>(&left_) && dynamic_cast<NumberConst*>(&left_) ||
+                    dynamic_cast<NumberConst*>(&left_) && dynamic_cast<Ident*>(&left_)){
+                
+            }
+            return "Invalid operation";
+        };
     };
 
     // Condition expressions
@@ -339,6 +439,24 @@ namespace AST {
     public:
         And(ASTNode &l, ASTNode &r) :
                 BinOp(std::string("And"),  l, r) {};
+        std::string eval(eval_context& ctx) {
+            if(dynamic_cast<BoolConst*>(&left_) && dynamic_cast<BoolConst*>(&right_)){
+                if (left_.eval(ctx) == "true" && right_.eval(ctx) == "true")
+                    return "true";
+                else return "false";
+            }else if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
+                if (!(left_.eval(ctx) == "0") && !(right_.eval(ctx) == "0"))
+                    return "true";
+                else return "false";
+            }else if(dynamic_cast<StringConst*>(&left_) && dynamic_cast<StringConst*>(&right_)){
+                if (left_.eval(ctx).length() > 0 && right_.eval(ctx).length() > 0)
+                    return "true";
+                else return "false";
+            }else{
+                
+            }
+            return "Invalid operation";
+        };
     };
 
     /**
@@ -348,6 +466,24 @@ namespace AST {
     public:
         Or(ASTNode &l, ASTNode &r) :
                 BinOp(std::string("Or"),  l, r) {};
+        std::string eval(eval_context& ctx) {
+            if(dynamic_cast<BoolConst*>(&left_) && dynamic_cast<BoolConst*>(&right_)){
+                if (left_.eval(ctx) == "true" || right_.eval(ctx) == "true")
+                    return "true";
+                else return "false";
+            }else if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
+                if (!(left_.eval(ctx) == "0") || !(right_.eval(ctx) == "0"))
+                    return "true";
+                else return "false";
+            }else if(dynamic_cast<StringConst*>(&left_) && dynamic_cast<StringConst*>(&right_)){
+                if (left_.eval(ctx).length() > 0 || right_.eval(ctx).length() > 0)
+                    return "true";
+                else return "false";
+            }else {
+                
+            }
+            return "Invalid operation";
+        };
     };
 
     /**
@@ -358,6 +494,24 @@ namespace AST {
     public:
         explicit Not(ASTNode &l) : left{l} {}
         void json(std::ostream& out, AST_print_context& ctx) override;
+        std::string eval(eval_context& ctx) {
+            if(dynamic_cast<BoolConst*>(&left)){
+                if (left.eval(ctx) == "true")
+                    return "false";
+                else return "true";
+            }else if(dynamic_cast<NumberConst*>(&left)){
+                if (left.eval(ctx) == "0")
+                    return "true";
+                else return "false";
+            }else if(dynamic_cast<StringConst*>(&left)){
+                if (left.eval(ctx).length() > 0)
+                    return "false";
+                else return "true";
+            }else {
+
+            }
+            return "Invalid operation";
+        };
     };
 
     // Comparing 
@@ -382,6 +536,24 @@ namespace AST {
     public:
         Less(ASTNode &l, ASTNode &r) :
             Compare("Less", "<",  l, r) {};
+        std::string eval(eval_context& ctx) {
+            if(dynamic_cast<BoolConst*>(&left_) && dynamic_cast<BoolConst*>(&right_)){
+                if (left_.eval(ctx) == "false" && right_.eval(ctx) == "true")
+                    return "true";
+                else return "false";
+            }else if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
+                if (std::stoi(left_.eval(ctx)) < std::stoi(right_.eval(ctx)))
+                    return "true";
+                else return "false";
+            }else if(dynamic_cast<StringConst*>(&left_) && dynamic_cast<StringConst*>(&right_)){
+                if (left_.eval(ctx) < right_.eval(ctx))
+                    return "true";
+                else return "false";
+            }else {
+
+            }
+            return "Invalid operation";
+        };
     };
 
     /**
@@ -391,6 +563,27 @@ namespace AST {
     public:
         Less_E(ASTNode &l, ASTNode &r) :
                 Compare("Less_E", "<=",  l, r) {};
+        std::string eval(eval_context& ctx) {
+            if(dynamic_cast<BoolConst*>(&left_) && dynamic_cast<BoolConst*>(&right_)){
+                if (left_.eval(ctx) == "false" && right_.eval(ctx) == "true")
+                    return "true";
+                else if (left_.eval(ctx) == "true" && right_.eval(ctx) == "true" || 
+                        left_.eval(ctx) == "false" && right_.eval(ctx) == "false")
+                    return "true";
+                else return "false";
+            }else if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
+                if (std::stoi(left_.eval(ctx)) <= std::stoi(right_.eval(ctx)))
+                    return "true";
+                else return "false";
+            }else if(dynamic_cast<StringConst*>(&left_) && dynamic_cast<StringConst*>(&right_)){
+                if (left_.eval(ctx) <= right_.eval(ctx))
+                    return "true";
+                else return "false";
+            }else{
+
+            }
+            return "Invalid operation";
+        };
     };
 
     /**
@@ -400,6 +593,27 @@ namespace AST {
     public:
         Greater_E(ASTNode &l, ASTNode &r) :
                 Compare("Greater_E", ">=",  l, r) {};
+        std::string eval(eval_context& ctx) {
+            if(dynamic_cast<BoolConst*>(&left_) && dynamic_cast<BoolConst*>(&right_)){
+                if (left_.eval(ctx) == "true" && right_.eval(ctx) == "false")
+                    return "true";
+                else if (left_.eval(ctx) == "true" && right_.eval(ctx) == "true" || 
+                        left_.eval(ctx) == "false" && right_.eval(ctx) == "false")
+                    return "true";
+                else return "false";
+            }else if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
+                if (std::stoi(left_.eval(ctx)) >= std::stoi(right_.eval(ctx)))
+                    return "true";
+                else return "false";
+            }else if(dynamic_cast<StringConst*>(&left_) && dynamic_cast<StringConst*>(&right_)){
+                if (left_.eval(ctx) >= right_.eval(ctx))
+                    return "true";
+                else return "false";
+            }else {
+
+            }
+            return "Invalid operation";
+        };
     };
 
     /**
@@ -409,6 +623,24 @@ namespace AST {
     public:
         Greater(ASTNode &l, ASTNode &r) :
                 Compare("Greater", ">", l, r) {};
+        std::string eval(eval_context& ctx) {
+            if(dynamic_cast<BoolConst*>(&left_) && dynamic_cast<BoolConst*>(&right_)){
+                if (left_.eval(ctx) == "true" && right_.eval(ctx) == "false")
+                    return "true";
+                else return "false";
+            }else if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
+                if (std::stoi(left_.eval(ctx)) > std::stoi(right_.eval(ctx)))
+                    return "true";
+                else return "false";
+            }else if(dynamic_cast<StringConst*>(&left_) && dynamic_cast<StringConst*>(&right_)){
+                if (left_.eval(ctx) > right_.eval(ctx))
+                    return "true";
+                else return "false";
+            }else {
+
+            }
+            return "Invalid operation";
+        };
     };
 
     /**
@@ -418,6 +650,24 @@ namespace AST {
     public:
         Equals(ASTNode &l, ASTNode &r) :
                 Compare("Equals", "==", l, r) {};
+        std::string eval(eval_context& ctx) {
+            if(dynamic_cast<BoolConst*>(&left_) && dynamic_cast<BoolConst*>(&right_)){
+                if (left_.eval(ctx) == right_.eval(ctx))
+                    return "true";
+                else return "false";
+            }else if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
+                if (std::stoi(left_.eval(ctx)) == std::stoi(right_.eval(ctx)))
+                    return "true";
+                else return "false";
+            }else if(dynamic_cast<StringConst*>(&left_) && dynamic_cast<StringConst*>(&right_)){
+                if (left_.eval(ctx) == right_.eval(ctx))
+                    return "true";
+                else return "false";
+            }else{
+
+            }
+            return "Invalid operation";
+        };
     };
 
     /**
@@ -427,6 +677,24 @@ namespace AST {
     public:
         Not_Equals(ASTNode &l, ASTNode &r) :
                 Compare("Not Equals", "!=", l, r) {};
+        std::string eval(eval_context& ctx) {
+            if(dynamic_cast<BoolConst*>(&left_) && dynamic_cast<BoolConst*>(&right_)){
+                if (left_.eval(ctx) != right_.eval(ctx))
+                    return "true";
+                else return "false";
+            }else if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
+                if (std::stoi(left_.eval(ctx)) != std::stoi(right_.eval(ctx)))
+                    return "true";
+                else return "false";
+            }else if(dynamic_cast<StringConst*>(&left_) && dynamic_cast<StringConst*>(&right_)){
+                if (left_.eval(ctx) != right_.eval(ctx))
+                    return "true";
+                else return "false";
+            }else{
+
+            }
+            return "Invalid operation";
+        };
     };
 
     
@@ -445,6 +713,28 @@ namespace AST {
         explicit While(ASTNode &cond, Block &body) :
             while_cond{cond}, while_block{body} {};
         void json(std::ostream& out, AST_print_context& ctx) override;
+        std::string eval(eval_context& ctx){
+            while (true)
+            {
+                if(dynamic_cast<BoolConst*>(&while_cond)){
+                    if (while_cond.eval(ctx) == "true")
+                        while_block.eval(ctx);
+                    else break;
+                }else if(dynamic_cast<NumberConst*>(&while_cond)){
+                    if (while_cond.eval(ctx) != "0")
+                        while_block.eval(ctx);
+                    else break;
+                }else if(dynamic_cast<StringConst*>(&while_cond)){
+                    if (while_cond.eval(ctx).length() > 0)
+                        while_block.eval(ctx);
+                    else break; 
+                }else {
+
+                }
+            }
+            
+            
+        }
     };
 
     /**
