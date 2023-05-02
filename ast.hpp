@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <unordered_map>
+#include "MemoryKernel.hpp"
 
 namespace AST {
     class AST_print_context {
@@ -19,7 +20,7 @@ namespace AST {
 
     class eval_context {
     public:
-        std::unordered_map<std::string,int> symbol_table;
+        MemoryKernel mem;
         explicit eval_context() { }
     };
 
@@ -84,6 +85,32 @@ namespace AST {
             mod.setMod(mod_.getMod());
         }
         void json(std::ostream& out, AST_print_context& ctx) override;
+        std::string eval(eval_context& ctx){
+            if(mod.getMod() != "assign"){
+                if(dynamic_cast<StringConst*>(&value))
+                    ctx.mem.put_object(new MemObject(OBJECT_STRING, name.eval(ctx), value.eval(ctx)));
+                else if (dynamic_cast<NumberConst*>(&value))
+                    ctx.mem.put_object(new MemObject(OBJECT_NUMBER, name.eval(ctx), value.eval(ctx)));
+                else if (dynamic_cast<BoolConst*>(&value))
+                    ctx.mem.put_object(new MemObject(OBJECT_BOOL, name.eval(ctx), value.eval(ctx)));
+                else if (dynamic_cast<NullConst*>(&value))
+                    ctx.mem.put_object(new MemObject(OBJECT_NULL, name.eval(ctx), value.eval(ctx)));
+            }else if(mod.getMod() == "assign"){
+                if(dynamic_cast<StringConst*>(&value)){
+                    ctx.mem.get_object(name.eval(ctx))->set_value(value.eval(ctx));
+                    ctx.mem.get_object(name.eval(ctx))->set_type(OBJECT_STRING);
+                }
+                else if (dynamic_cast<NumberConst*>(&value)){
+                    ctx.mem.get_object(name.eval(ctx))->set_value(value.eval(ctx));
+                    ctx.mem.get_object(name.eval(ctx))->set_type(OBJECT_NUMBER);
+                }
+                else if (dynamic_cast<BoolConst*>(&value)){
+                    ctx.mem.get_object(name.eval(ctx))->set_value(value.eval(ctx));
+                    ctx.mem.get_object(name.eval(ctx))->set_type(OBJECT_BOOL);
+                }
+            }
+            return "Invalid operation";
+        }
     };
 
 
@@ -134,9 +161,11 @@ namespace AST {
         std::vector<ASTNode*> getNodes() { return nodes; }
         void json(std::ostream& out, AST_print_context& ctx) override;
         std::string eval(eval_context& ctx){
+            ctx.mem.enter_scope();
             for(ASTNode* node: nodes){
                 node->eval(ctx);
             }
+            ctx.mem.exit_scope();
             return "Done";
         }
      };
@@ -210,6 +239,9 @@ namespace AST {
         std::string eval(eval_context& ctx){
             return value;
         }
+        std::string get_type(){
+            return leaf_type;
+        }
     };
 
     /**
@@ -250,6 +282,9 @@ namespace AST {
     public:
         explicit Ident(std::string txt) :
             LeafNode(std::string("Ident"), txt) {};
+        std::string eval(eval_context& ctx){
+            return ctx.mem.get_object(value)->get_value();
+        }
     };
 
     /**
@@ -261,15 +296,7 @@ namespace AST {
     class VarType : public LeafNode {
     public:
         VarType(std::string v) :
-            LeafNode(std::string("VarType"), v) {};
-        std::string eval(eval_context& ctx) {
-            if(){
-                return "Int";
-            } else if (){
-                return "Bool";
-            }
-            return "String";
-        }; 
+            LeafNode(std::string("VarType"), v) {}; 
     };
 
     class OpType : public LeafNode {
@@ -288,6 +315,9 @@ namespace AST {
     public:
         explicit NullConst() {}
         void json(std::ostream& out, AST_print_context& ctx) override;
+        std::string get_type(){
+            return "null";
+        }
     };
 
     // Bin Operations
@@ -337,13 +367,14 @@ namespace AST {
         IsOp(ASTNode &l, ASTNode &r) :
                 BinOp(std::string("Is"),  l, r) {};
         std::string eval(eval_context& ctx) {
-            if(dynamic_cast<NumberConst*>(&left_) && right_.eval(ctx) == "Number"){
+            MemObject* var = ctx.mem.get_object(dynamic_cast<Ident*>(&left_)->eval(ctx));
+            if(var->get_type() == OBJECT_NUMBER && right_.eval(ctx) == "number"){
                 return "true";
-            } else if (dynamic_cast<BoolConst*>(&left_) && right_.eval(ctx) == "Bool"){
+            } else if (var->get_type() == OBJECT_BOOL && right_.eval(ctx) == "bool"){
                 return "true";
-            } else if (dynamic_cast<StringConst*>(&left_) && right_.eval(ctx) == "String"){
+            } else if (var->get_type() == OBJECT_STRING && right_.eval(ctx) == "string"){
                 return "true";
-            } else if (dynamic_cast<NullConst*>(&left_) && right_.eval(ctx) == "Null"){
+            } else if (var->get_type() == OBJECT_NULL && right_.eval(ctx) == "null"){
                 return "true";
             }
             return "false";
@@ -359,12 +390,41 @@ namespace AST {
                 BinOp(std::string("Plus"),  l, r) {};
         std::string eval(eval_context& ctx) {
             if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
+
                 int result = std::stoi(left_.eval(ctx)) + std::stoi(right_.eval(ctx));
                 return std::to_string(result);
-            } else if (dynamic_cast<BoolConst*>(&left_) && dynamic_cast<BoolConst*>(&right_)){
-                if (left_.eval(ctx) == "false" && right_.eval(ctx) == "false")
-                    return "false";
-                return "true";
+
+            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<Ident*>(&right_)){
+
+                Ident* left = dynamic_cast<Ident*>(&left_);
+                Ident* right = dynamic_cast<Ident*>(&right_);
+                if(left->get_type() == "Number" && right->get_type() == "Number"){
+                    int result = std::stoi(left_.eval(ctx)) + std::stoi(right_.eval(ctx));
+                    return std::to_string(result);
+                }
+
+            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
+
+                Ident* left = dynamic_cast<Ident*>(&left_);
+                if(left->get_type() == "Number"){
+                    int result = std::stoi(left_.eval(ctx)) + std::stoi(right_.eval(ctx));
+                    return std::to_string(result);
+                }
+
+            }else if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<Ident*>(&right_)){
+
+                Ident* right = dynamic_cast<Ident*>(&right_);
+                if(right->get_type() == "Number"){
+                    int result = std::stoi(left_.eval(ctx)) + std::stoi(right_.eval(ctx));
+                    return std::to_string(result);
+                }
+
+            } else if (dynamic_cast<BoolConst*>(&left_) || dynamic_cast<BoolConst*>(&right_) ||
+                        dynamic_cast<Ident*>(&left_)->get_type() == "Bool" || 
+                        dynamic_cast<Ident*>(&right_)->get_type() == "Bool"){
+
+                return "Invalid operation";
+
             }
             return left_.eval(ctx) + right_.eval(ctx);
         }; 
@@ -379,12 +439,35 @@ namespace AST {
             BinOp(std::string("Minus"),  l, r) {};
         std::string eval(eval_context& ctx) {
             if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
+
                 int result = std::stoi(left_.eval(ctx)) - std::stoi(right_.eval(ctx));
                 return std::to_string(result);
-            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<Ident*>(&left_) || 
-                    dynamic_cast<Ident*>(&left_) && dynamic_cast<NumberConst*>(&left_) ||
-                    dynamic_cast<NumberConst*>(&left_) && dynamic_cast<Ident*>(&left_)){
-                
+
+            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<Ident*>(&right_)){
+
+                Ident* left = dynamic_cast<Ident*>(&left_);
+                Ident* right = dynamic_cast<Ident*>(&right_);
+                if(left->get_type() == "Number" && right->get_type() == "Number"){
+                    int result = std::stoi(left_.eval(ctx)) - std::stoi(right_.eval(ctx));
+                    return std::to_string(result);
+                }
+
+            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
+
+                Ident* left = dynamic_cast<Ident*>(&left_);
+                if(left->get_type() == "Number"){
+                    int result = std::stoi(left_.eval(ctx)) - std::stoi(right_.eval(ctx));
+                    return std::to_string(result);
+                }
+
+            }else if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<Ident*>(&right_)){
+
+                Ident* right = dynamic_cast<Ident*>(&right_);
+                if(right->get_type() == "Number"){
+                    int result = std::stoi(left_.eval(ctx)) - std::stoi(right_.eval(ctx));
+                    return std::to_string(result);
+                }
+
             }
             return "Invalid operation";
         };
@@ -392,6 +475,9 @@ namespace AST {
 
     /**
      * Умножение
+     * || 
+                    dynamic_cast<Ident*>(&left_) && dynamic_cast<NumberConst*>(&left_) ||
+                    dynamic_cast<NumberConst*>(&left_) && dynamic_cast<Ident*>(&left_)){
     */
     class Times : public BinOp {
     public:
@@ -399,12 +485,35 @@ namespace AST {
                 BinOp(std::string("Times"),  l, r) {};
         std::string eval(eval_context& ctx) {
             if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
+                
                 int result = std::stoi(left_.eval(ctx)) * std::stoi(right_.eval(ctx));
                 return std::to_string(result);
-            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<Ident*>(&left_) || 
-                    dynamic_cast<Ident*>(&left_) && dynamic_cast<NumberConst*>(&left_) ||
-                    dynamic_cast<NumberConst*>(&left_) && dynamic_cast<Ident*>(&left_)){
-                
+
+            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<Ident*>(&right_)){
+
+                Ident* left = dynamic_cast<Ident*>(&left_);
+                Ident* right = dynamic_cast<Ident*>(&right_);
+                if(left->get_type() == "Number" && right->get_type() == "Number"){
+                    int result = std::stoi(left_.eval(ctx)) * std::stoi(right_.eval(ctx));
+                    return std::to_string(result);
+                }
+
+            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
+
+                Ident* left = dynamic_cast<Ident*>(&left_);
+                if(left->get_type() == "Number"){
+                    int result = std::stoi(left_.eval(ctx)) * std::stoi(right_.eval(ctx));
+                    return std::to_string(result);
+                }
+
+            }else if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<Ident*>(&right_)){
+
+                Ident* right = dynamic_cast<Ident*>(&right_);
+                if(right->get_type() == "Number"){
+                    int result = std::stoi(left_.eval(ctx)) * std::stoi(right_.eval(ctx));
+                    return std::to_string(result);
+                }
+
             }
             return "Invalid operation";
         };
@@ -419,12 +528,35 @@ namespace AST {
                 BinOp(std::string("Div"),  l, r) {};
         std::string eval(eval_context& ctx) {
             if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
-                int result = std::stoi(left_.eval(ctx)) / std::stoi(right_.eval(ctx));
-                return std::to_string(result);
-            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<Ident*>(&left_) || 
-                    dynamic_cast<Ident*>(&left_) && dynamic_cast<NumberConst*>(&left_) ||
-                    dynamic_cast<NumberConst*>(&left_) && dynamic_cast<Ident*>(&left_)){
                 
+                int result = std::stoi(left_.eval(ctx)) * std::stoi(right_.eval(ctx));
+                return std::to_string(result);
+
+            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<Ident*>(&right_)){
+
+                Ident* left = dynamic_cast<Ident*>(&left_);
+                Ident* right = dynamic_cast<Ident*>(&right_);
+                if(left->get_type() == "Number" && right->get_type() == "Number"){
+                    int result = std::stoi(left_.eval(ctx)) / std::stoi(right_.eval(ctx));
+                    return std::to_string(result);
+                }
+
+            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
+
+                Ident* left = dynamic_cast<Ident*>(&left_);
+                if(left->get_type() == "Number"){
+                    int result = std::stoi(left_.eval(ctx)) / std::stoi(right_.eval(ctx));
+                    return std::to_string(result);
+                }
+
+            }else if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<Ident*>(&right_)){
+
+                Ident* right = dynamic_cast<Ident*>(&right_);
+                if(right->get_type() == "Number"){
+                    int result = std::stoi(left_.eval(ctx)) / std::stoi(right_.eval(ctx));
+                    return std::to_string(result);
+                }
+
             }
             return "Invalid operation";
         };
@@ -444,18 +576,64 @@ namespace AST {
                 if (left_.eval(ctx) == "true" && right_.eval(ctx) == "true")
                     return "true";
                 else return "false";
+            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<Ident*>(&right_)){
+
+                Ident* left = dynamic_cast<Ident*>(&left_);
+                Ident* right = dynamic_cast<Ident*>(&right_);
+                if(left->get_type() == "Bool" && right->get_type() == "Bool"){
+                    if (left_.eval(ctx) == "true" && right_.eval(ctx) == "true")
+                        return "true";
+                    else return "false";
+                }else if(left->get_type() == "Number" && right->get_type() == "Number"){
+                    if (!(left_.eval(ctx) == "0") && !(right_.eval(ctx) == "0"))
+                        return "true";
+                    else return "false";
+                }
+
+            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<BoolConst*>(&right_)){
+
+                Ident* left = dynamic_cast<Ident*>(&left_);
+                if(left->get_type() == "Bool"){
+                    if (left_.eval(ctx) == "true" && right_.eval(ctx) == "true")
+                        return "true";
+                    else return "false";
+                }
+
+            }else if(dynamic_cast<BoolConst*>(&left_) && dynamic_cast<Ident*>(&right_)){
+
+                Ident* right = dynamic_cast<Ident*>(&right_);
+                if(right->get_type() == "Bool"){
+                    if (left_.eval(ctx) == "true" && right_.eval(ctx) == "true")
+                        return "true";
+                    else return "false";
+                }
+
             }else if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
+                
                 if (!(left_.eval(ctx) == "0") && !(right_.eval(ctx) == "0"))
                     return "true";
                 else return "false";
-            }else if(dynamic_cast<StringConst*>(&left_) && dynamic_cast<StringConst*>(&right_)){
-                if (left_.eval(ctx).length() > 0 && right_.eval(ctx).length() > 0)
-                    return "true";
-                else return "false";
-            }else{
-                
+
+            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
+
+                Ident* left = dynamic_cast<Ident*>(&left_);
+                if(left->get_type() == "Number"){
+                    if (!(left_.eval(ctx) == "0") && !(right_.eval(ctx) == "0"))
+                        return "true";
+                    else return "false";
+                }
+
+            }else if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<Ident*>(&right_)){
+
+                Ident* right = dynamic_cast<Ident*>(&right_);
+                if(right->get_type() == "Number"){
+                    if (!(left_.eval(ctx) == "0") && !(right_.eval(ctx) == "0"))
+                        return "true";
+                    else return "false";
+                }
+
             }
-            return "Invalid operation";
+            return "true";
         };
     };
 

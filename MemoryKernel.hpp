@@ -21,6 +21,7 @@ enum ObjectType : int {
   OBJECT_STRING = 0,
   OBJECT_NUMBER,
   OBJECT_BOOL,
+  OBJECT_NULL,
   OBJECT_FUNC,
 };
 
