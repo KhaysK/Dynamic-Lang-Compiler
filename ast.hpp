@@ -1347,6 +1347,12 @@ namespace AST {
             std::vector<MemObject*> to_call;
             std::vector<std::string> arg_names = func->get_arg_names();
 
+            // This should be modified when arrays are implemented
+            if (params.size() != arg_names.size()) {
+                std::cout << func->get_name() << ": Invalid arguments. Aborting.\n";
+                exit(1);
+            }
+
             for (int i = 0; i < params.size(); ++i) {
                 ASTNode *node = params[i];
                 if (dynamic_cast<NumberConst*>(node)) {
@@ -1358,7 +1364,12 @@ namespace AST {
                     to_call.push_back(new MemObject(OBJECT_NUMBER, arg_names[i], node->eval(mem)));
                 }
             }
-            func->prep_mem(mem, to_call);
+            
+            if (!func->prep_mem(mem, to_call)) {
+                std::cout << func->get_name() << ": Invalid arguments. Aborting.\n";
+                exit(1);
+            }
+
             static_cast<Block*>(func->get_entry_point())->eval(mem);
             mem.exit_scope();
 
