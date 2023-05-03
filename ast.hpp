@@ -1082,27 +1082,41 @@ namespace AST {
 
             }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<Ident*>(&right_))  {
 
-                Ident* left = dynamic_cast<Ident*>(&left_);
-                Ident* right = dynamic_cast<Ident*>(&right_);
-                if(left->get_type() == "Bool" && right->get_type() == "Bool"){
+                MemObject* left = mem.get_object(dynamic_cast<Ident*>(&left_)->get_name());
+                MemObject* right = mem.get_object(dynamic_cast<Ident*>(&right_)->get_name());
+                if(left->get_type() == OBJECT_NUMBER){
+                    
+                    double first, second;
+                    std::stringstream _l(left->get_value());
+                    std::stringstream _r(right_.eval(mem));
+                    _l >> first;
+                    _r >> second;
 
-                    if (left_.eval(mem) == "false" && right_.eval(mem) == "true")
+                    if (first > second)
                         return "true";
                     else return "false";
-
-                }else if(left->get_type() == "Number" && right->get_type() == "Number"){
-
-                    if (std::stoi(left_.eval(mem)) > std::stoi(right_.eval(mem)))
-                        return "true";
-                    else return "false";
-
-                }else if(left->get_type() == "String" && right->get_type() == "String"){
-
-                    if (left_.eval(mem) > right_.eval(mem))
-                        return "true";
-                    else return "false";
-
                 }
+                // Ident* left = dynamic_cast<Ident*>(&left_);
+                // Ident* right = dynamic_cast<Ident*>(&right_);
+                // if(left->get_type() == "Bool" && right->get_type() == "Bool"){
+
+                //     if (left_.eval(mem) == "false" && right_.eval(mem) == "true")
+                //         return "true";
+                //     else return "false";
+
+                // }else if(left->get_type() == "Number" && right->get_type() == "Number"){
+
+                //     if (std::stoi(left_.eval(mem)) > std::stoi(right_.eval(mem)))
+                //         return "true";
+                //     else return "false";
+
+                // }else if(left->get_type() == "String" && right->get_type() == "String"){
+
+                //     if (left_.eval(mem) > right_.eval(mem))
+                //         return "true";
+                //     else return "false";
+
+                // }
             }
             return "Invalid operation";
         };
