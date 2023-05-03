@@ -134,7 +134,7 @@ statement
 	: assignment { $$ = $1; }
 	| if_statement { $$ = $1; }
  	| loop_statement { $$ = $1; }
-	| function_call { $$ = $1; }
+	| function_call SEMICOLON { $$ = $1; }
 	;
 
 

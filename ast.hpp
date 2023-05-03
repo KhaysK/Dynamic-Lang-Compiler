@@ -194,48 +194,7 @@ namespace AST {
             mod.setMod(mod_.getMod());
         }
         void json(std::ostream& out, AST_print_context& mem) override;
-        std::string eval(MemoryKernel& mem) override{
-            if(mod.getMod() != "assign"){
-
-                if(dynamic_cast<StringConst*>(&value))
-                    mem.put_object(new MemObject(OBJECT_STRING, name, value.eval(mem)));
-                // else if (dynamic_cast<NumberConst*>(&value))
-                    // mem.put_object(new MemObject(OBJECT_NUMBER, name.eval(mem), value.eval(mem)));
-                else if (dynamic_cast<BoolConst*>(&value))
-                    mem.put_object(new MemObject(OBJECT_BOOL, name, value.eval(mem)));
-                else if (dynamic_cast<NullConst*>(&value))
-                    mem.put_object(new MemObject(OBJECT_NULL, name, value.eval(mem)));
-                else
-                    mem.put_object(new MemObject(OBJECT_NUMBER, name, value.eval(mem)));
-
-            }else if(mod.getMod() == "assign"){
-
-                if(dynamic_cast<StringConst*>(&value)){
-                    mem.get_object(name)->set_value(value.eval(mem));
-                    mem.get_object(name)->set_type(OBJECT_STRING);
-                }
-                else if (dynamic_cast<NumberConst*>(&value)){
-                    mem.get_object(name)->set_value(value.eval(mem));
-                    mem.get_object(name)->set_type(OBJECT_NUMBER);
-                }
-                else if (dynamic_cast<BoolConst*>(&value)){
-                    mem.get_object(name)->set_value(value.eval(mem));
-                    mem.get_object(name)->set_type(OBJECT_BOOL);
-                } else if (dynamic_cast<FuncDecl*>(&value)) {
-                    // FuncDecl *fd = dynamic_cast<FuncDecl*>(&value);
-                    // std::vector<std::string> args;
-                    // for (auto p: fd->params)
-                    //     args.push_back(dynamic_cast<Ident*>(p)->get_name());
-                    
-                    // MemFunction *func = new MemFunction(name, &fd->funcBody, args);
-                    // mem.put_object(func);
-                } else {
-                    mem.get_object(name)->set_value(value.eval(mem));
-                    mem.get_object(name)->set_type(OBJECT_NUMBER);
-                }
-            }
-            return "Invalid operation";
-        };
+        std::string eval(MemoryKernel& mem) override;
     };
 
 
@@ -513,10 +472,14 @@ namespace AST {
 
             }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
 
-                Ident* left = dynamic_cast<Ident*>(&left_);
-                if(left->get_type() == "Number"){
-                    int result = std::stoi(left_.eval(mem)) - std::stoi(right_.eval(mem));
-                    return std::to_string(result);
+                 MemObject* left = mem.get_object(dynamic_cast<Ident*>(&left_)->get_name());
+                if(left->get_type() == OBJECT_NUMBER){
+                    double first, second;
+                    std::stringstream _l(left->get_value());
+                    std::stringstream _r(right_.eval(mem));
+                    _l >> first;
+                    _r >> second;
+                    return std::to_string(first - second);
                 }
 
             }else if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<Ident*>(&right_)){
@@ -1374,6 +1337,31 @@ namespace AST {
             }
         }
         void json(std::ostream& out, AST_print_context& mem) override;
+        std::string eval(MemoryKernel &mem) override {
+
+            MemObject *obj = mem.get_object(dynamic_cast<Ident*>(&ident)->get_name());
+            MemFunction *func = dynamic_cast<MemFunction*>(obj);
+
+            mem.enter_scope();
+
+            std::vector<MemObject*> to_call;
+            std::vector<std::string> arg_names = func->get_arg_names();
+
+            for (int i = 0; i < params.size(); ++i) {
+                ASTNode *node = params[i];
+                if (dynamic_cast<NumberConst*>(node)) {
+                    to_call.push_back(new MemObject(OBJECT_NUMBER, arg_names[i], node->eval(mem)));
+                } else if (dynamic_cast<Ident*>(node)) {
+                    MemObject* obj = mem.get_object(dynamic_cast<Ident*>(node)->get_name());
+                    to_call.push_back(new MemObject(obj->get_type(), arg_names[i], obj->get_value()));
+                }
+            }
+            func->prep_mem(mem, to_call);
+            static_cast<Block*>(func->get_entry_point())->eval(mem);
+            mem.exit_scope();
+
+            return "";
+        }
     };
 
 
