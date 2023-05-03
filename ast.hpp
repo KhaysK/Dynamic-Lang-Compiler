@@ -369,16 +369,19 @@ namespace AST {
     /**
      * Считываем информацию с юзера
      * 
-     * left: Тип считываемых данных (VarType)
-     * right: Имя переменной (Ident)
+     * type: Тип считываемых данных (VarType)
+     * name: Имя переменной (string)
      * 
      * Возможно, создать класс для каждого readInt, readReal, readSrting
      * удобнее, в таком случае call me)
     */
-    class Read : public BinOp {
+    class Read : public ASTNode {
+        std::string name;
+        ASTNode &type;
     public:
-        Read(ASTNode &l, ASTNode &r) :
-                BinOp(std::string("Read"),  l, r) {};
+        Read(ASTNode &l, std::string n) :
+                name{n}, type{l} {};
+        void json(std::ostream& out, AST_print_context& mem) override;
     };
 
     /**

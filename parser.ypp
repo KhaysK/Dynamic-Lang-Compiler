@@ -256,8 +256,7 @@ factor
 operation
 	: PRINT expression SEMICOLON { $$ = new AST::Print(*$2); }
 	| read_keyword IDENTIFIER SEMICOLON { 
-		AST::Ident* ident = new AST::Ident($2); 
-		$$ = new AST::Read(*$1, *ident); 
+		$$ = new AST::Read(*$1, $2); 
 	 }
 	| IDENTIFIER operation_op ASSIGN expression SEMICOLON {
 		AST::Ident* ident = new AST::Ident($1); 

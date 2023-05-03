@@ -120,6 +120,13 @@ namespace AST {
         json_close(out, ctx);
     }
 
+    void Read::json(std::ostream& out, AST_print_context& ctx) {
+        json_head("Read", out, ctx);
+        json_child("VarType", type, out, ctx);
+        out << "\"name\" : \"" << name << "\"";
+        json_close(out, ctx);
+    }
+
     void ArrayDecl::json(std::ostream& out, AST_print_context& ctx) {
         json_head("Array Decl", out, ctx);
         out << "\"array params\" : [";
