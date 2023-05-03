@@ -1,5 +1,5 @@
 CC=clang++
-CFLAGS=-Wno-c99-designator
+CFLAGS=-Wno-c99-designator -ggdb -O0
 
 all: bin/compiler
 
@@ -15,7 +15,7 @@ obj/parser.tab.o: parser.tab.cpp
 	mkdir -p obj/
 	$(CC) $(CFLAGS) -c parser.tab.cpp -o obj/parser.tab.o
 
-obj/ast.o: ast.cpp
+obj/ast.o: ast.cpp ast.hpp MemoryKernel.hpp
 	mkdir -p obj/
 	$(CC) $(CFLAGS) -c ast.cpp -o obj/ast.o
 

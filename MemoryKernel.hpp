@@ -4,8 +4,6 @@
 #include <string>
 #include <vector>
 
-#include "ast.hpp"
-
 /* All classess prototypes */
 class MemObject;
 class MemFunction;
@@ -67,19 +65,19 @@ class MemObject {
 class MemFunction : public MemObject {
  private:
   // entry point for function
-  AST::Block *entry_point;
+  void *entry_point;
 
   // names of arguments required by function
   // (required to prepare memory before function call)
   std::vector<std::string> arg_names;
 
  public:
-  MemFunction(std::string name, AST::Block *entry_point,
+  MemFunction(std::string name, void *entry_point,
               std::vector<std::string> arg_names);
 
   // Get entry point block for execution
   // (do not forget to call `prep_mem` before run!)
-  AST::Block *get_entry_point() const;
+  void *get_entry_point() const;
 
   // May be needed to fill arguments before function call
   std::vector<std::string> get_arg_names() const;

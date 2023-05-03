@@ -9,10 +9,6 @@ x = "Hello"; # OK
 # assign multiple variables in one line
 var a = 30, b = false;
 
-# can create variable via expression
-var g = 10, h = 20;
-var j = g * h / 2;
-
 # initialize empty variable (it has special type `null`)
 var c; # c is null
 

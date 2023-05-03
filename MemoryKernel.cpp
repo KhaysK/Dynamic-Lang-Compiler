@@ -73,13 +73,13 @@ void MemObject::ref_inc() { this->num_references++; }
  *          MemFunction Implementation
  **************************************************/
 
-MemFunction::MemFunction(std::string name, AST::Block *entry_point,
+MemFunction::MemFunction(std::string name, void *entry_point,
                          std::vector<std::string> arg_names)
     : MemObject(OBJECT_FUNC, name, "(func)"),
       entry_point(entry_point),
       arg_names(arg_names) {}
 
-AST::Block *MemFunction::get_entry_point() const { return this->entry_point; }
+void *MemFunction::get_entry_point() const { return this->entry_point; }
 
 std::vector<std::string> MemFunction::get_arg_names() const {
   return std::vector<std::string>(this->arg_names);

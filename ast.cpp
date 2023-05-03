@@ -47,7 +47,7 @@ namespace AST {
     void Assign::json(std::ostream& out, AST_print_context& ctx) {
         json_head("Assign", out, ctx);
         json_child("mod", mod, out, ctx);
-        json_child("name", name, out, ctx);
+        out << "\"name\" : \"" << name << "\"";
         json_child("value", value, out, ctx, ' ');
         json_close(out, ctx);
      }
