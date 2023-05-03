@@ -1354,6 +1354,8 @@ namespace AST {
                 } else if (dynamic_cast<Ident*>(node)) {
                     MemObject* obj = mem.get_object(dynamic_cast<Ident*>(node)->get_name());
                     to_call.push_back(new MemObject(obj->get_type(), arg_names[i], obj->get_value()));
+                } else {
+                    to_call.push_back(new MemObject(OBJECT_NUMBER, arg_names[i], node->eval(mem)));
                 }
             }
             func->prep_mem(mem, to_call);
