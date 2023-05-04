@@ -1,8 +1,28 @@
 # functions are objects too
 
-var f = func(a, b) do
-	var c = a + b;
-	return c;
+const g = func(a, b) do
+	print a + b;
+	return 0;
 end
 
-print f(10, 20); # 30
+const f = func(a) do
+	if a <= 0
+	then
+		print "*";
+	else
+		var s = "", i = 0;
+		while i <= a
+		loop
+			s = s + "*";
+			i = i + 1;
+		end
+		print s;
+		a = a - 1;
+		f(a);
+	end
+	return 0;
+end
+
+
+g(15, 23);
+f(6); # 30

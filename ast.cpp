@@ -47,10 +47,60 @@ namespace AST {
     void Assign::json(std::ostream& out, AST_print_context& ctx) {
         json_head("Assign", out, ctx);
         json_child("mod", mod, out, ctx);
-        json_child("name", name, out, ctx);
+        out << "\"name\" : \"" << name << "\"";
         json_child("value", value, out, ctx, ' ');
         json_close(out, ctx);
-     }
+    }
+    std::string Assign::eval(MemoryKernel& mem){
+        if(mod.getMod() != "assign"){
+
+            if(dynamic_cast<StringConst*>(&value))
+                mem.put_object(new MemObject(OBJECT_STRING, name, value.eval(mem)));
+            // else if (dynamic_cast<NumberConst*>(&value))
+                // mem.put_object(new MemObject(OBJECT_NUMBER, name.eval(mem), value.eval(mem)));
+            else if (dynamic_cast<BoolConst*>(&value))
+                mem.put_object(new MemObject(OBJECT_BOOL, name, value.eval(mem)));
+            else if (dynamic_cast<NullConst*>(&value))
+                mem.put_object(new MemObject(OBJECT_NULL, name, value.eval(mem)));
+            else if (dynamic_cast<FuncDecl*>(&value)) {
+                FuncDecl *fd = dynamic_cast<FuncDecl*>(&value);
+                std::vector<std::string> args;
+                for (auto p: fd->params)
+                    args.push_back(dynamic_cast<Ident*>(p)->get_name());
+                
+                MemFunction *func = new MemFunction(name, &fd->funcBody, args);
+                mem.put_object(func);
+            } else
+                mem.put_object(new MemObject(OBJECT_NUMBER, name, value.eval(mem)));
+
+        }else if(mod.getMod() == "assign"){
+
+            if(dynamic_cast<StringConst*>(&value)){
+                mem.get_object(name)->set_value(value.eval(mem));
+                mem.get_object(name)->set_type(OBJECT_STRING);
+            }
+            else if (dynamic_cast<NumberConst*>(&value)){
+                mem.get_object(name)->set_value(value.eval(mem));
+                mem.get_object(name)->set_type(OBJECT_NUMBER);
+            }
+            else if (dynamic_cast<BoolConst*>(&value)){
+                mem.get_object(name)->set_value(value.eval(mem));
+                mem.get_object(name)->set_type(OBJECT_BOOL);
+            } else if (dynamic_cast<FuncDecl*>(&value)) {
+                FuncDecl *fd = dynamic_cast<FuncDecl*>(&value);
+                std::vector<std::string> args;
+                for (auto p: fd->params)
+                    args.push_back(dynamic_cast<Ident*>(p)->get_name());
+                
+                MemFunction *func = new MemFunction(name, &fd->funcBody, args);
+                mem.put_object(func);
+            } else {
+                mem.get_object(name)->set_value(value.eval(mem));
+                mem.get_object(name)->set_type(OBJECT_NUMBER);
+            }
+        }
+        return "Invalid operation";
+    };
 
     void If::json(std::ostream& out, AST_print_context& ctx) {
         json_head("If", out, ctx);
@@ -117,6 +167,13 @@ namespace AST {
             sep = ", ";
         }
         out << "]";
+        json_close(out, ctx);
+    }
+
+    void Read::json(std::ostream& out, AST_print_context& ctx) {
+        json_head("Read", out, ctx);
+        json_child("VarType", type, out, ctx);
+        out << "\"name\" : \"" << name << "\"";
         json_close(out, ctx);
     }
 

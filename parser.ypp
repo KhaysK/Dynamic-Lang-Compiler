@@ -134,7 +134,7 @@ statement
 	: assignment { $$ = $1; }
 	| if_statement { $$ = $1; }
  	| loop_statement { $$ = $1; }
-	| function_call { $$ = $1; }
+	| function_call SEMICOLON { $$ = $1; }
 	;
 
 
@@ -145,9 +145,8 @@ assignment
 		$$->distribute($1);
 	}
 	| declaration_specifics IDENTIFIER ASSIGN function_declaration { 
-		AST::Ident* lhs = new AST::Ident($2);
 		$$ = new AST::Block();
-		AST::ASTNode* node = new AST::Assign(*$1, *lhs, *$4);
+		AST::ASTNode* node = new AST::Assign(*$1, $2, *$4);
 		$$->append(node);
 	 }
 	;
@@ -164,29 +163,25 @@ list_assignemtns
 
 assignment_part
 	: IDENTIFIER ASSIGN assignment_value {
-		AST::Ident* lhs = new AST::Ident($1);
 		AST::ASTNode* rhs = $3;
 		AST::AssignMod* mod = new AST::AssignMod("assign");
-		$$ = new AST::Assign(*mod, *lhs, *rhs);
+		$$ = new AST::Assign(*mod, $1, *rhs);
 	 }
 	| IDENTIFIER ASSIGN expression {
-		AST::Ident* lhs = new AST::Ident($1);
 		AST::ASTNode* rhs = $3;
 		AST::AssignMod* mod = new AST::AssignMod("assign");
-		$$ = new AST::Assign(*mod, *lhs, *rhs);
+		$$ = new AST::Assign(*mod, $1, *rhs);
 	 }
 	| IDENTIFIER {
-		AST::Ident* lhs = new AST::Ident($1);
 		AST::ASTNode* rhs = new AST::NullConst();
 		AST::AssignMod* mod = new AST::AssignMod("assign");
-		$$ = new AST::Assign(*mod, *lhs, *rhs);
+		$$ = new AST::Assign(*mod, $1, *rhs);
 	}
 	| IDENTIFIER LBRACKET NUMBER RBRACKET ASSIGN expression {
 		AST::Ident* ident = new AST::Ident($1); 
 		AST::NumberConst* idx = new AST::NumberConst($3);
-		AST::ArrayEl* elem = new AST::ArrayEl(*ident, *idx);
 		AST::AssignMod* mod = new AST::AssignMod("assign");
-		$$ = new AST::Assign(*mod, *elem,*$6);
+		$$ = new AST::Assign(*mod, $1,*$6);
 	}
 	;
 
@@ -261,8 +256,7 @@ factor
 operation
 	: PRINT expression SEMICOLON { $$ = new AST::Print(*$2); }
 	| read_keyword IDENTIFIER SEMICOLON { 
-		AST::Ident* ident = new AST::Ident($2); 
-		$$ = new AST::Read(*$1, *ident); 
+		$$ = new AST::Read(*$1, $2); 
 	 }
 	| IDENTIFIER operation_op ASSIGN expression SEMICOLON {
 		AST::Ident* ident = new AST::Ident($1); 

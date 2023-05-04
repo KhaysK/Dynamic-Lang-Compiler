@@ -608,7 +608,8 @@ int main(int argc, char *argv[]) {
     p.parse();
 
     cout << ast_root->str() << '\n';
-
+    MemoryKernel mem;
+    ast_root->eval(mem);
     return 0;
 }
 
