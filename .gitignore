@@ -6,3 +6,4 @@ obj/
 bin/
 a.out
 .nnl_warn
+build/
