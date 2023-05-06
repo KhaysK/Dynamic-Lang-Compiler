@@ -1,0 +1,15 @@
+const f = func() do
+    var x = 0;
+
+    var y = func() do
+        x = x + 1
+        return x
+    end
+
+    return y
+end
+
+var d = f()
+
+print d()
+print d()

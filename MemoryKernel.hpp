@@ -125,6 +125,7 @@ class MemoryKernel {
  private:
   // each element of scopes is a vector of objects in current scope
   std::vector<std::vector<MemObject *>> scopes;
+  bool inside_func;
 
   /**
    * @brief Save primary (not array) element into memory
@@ -205,6 +206,24 @@ class MemoryKernel {
    * @return List of array elements
    */
   std::vector<MemObject *> extract_array(std::string name);
+
+  /**
+   * @brief Mark memory that it is executed inside 
+   *        function at the moment
+   */
+  void mark_inside_func();
+
+  /**
+   * @brief Mark memory that it is not executed inside 
+   *        function at the moment
+   */
+  void unmark_inside_func();
+
+  /**
+   * @brief Check if memory is located inside
+   *        function at the moment
+   */
+  bool is_inside_func() const;
 };
 
 #endif  // MEMORY_KERNEL_HPP

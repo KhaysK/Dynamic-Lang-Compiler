@@ -1357,6 +1357,7 @@ namespace AST {
             MemFunction *func = dynamic_cast<MemFunction*>(obj);
 
             mem.enter_scope();
+            mem.mark_inside_func();
 
             std::vector<MemObject*> to_call;
             std::vector<std::string> arg_names = func->get_arg_names();
@@ -1386,6 +1387,7 @@ namespace AST {
 
             static_cast<Block*>(func->get_entry_point())->eval(mem);
             mem.exit_scope();
+            mem.unmark_inside_func();
 
             return "";
         }

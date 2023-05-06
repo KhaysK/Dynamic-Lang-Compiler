@@ -63,6 +63,11 @@ namespace AST {
             else if (dynamic_cast<NullConst*>(&value))
                 mem.put_object(new MemObject(OBJECT_NULL, name, value.eval(mem)));
             else if (dynamic_cast<FuncDecl*>(&value)) {
+                if (mem.is_inside_func()){
+                    std::cout << "Can not declare function inside function\n";
+                    exit(1);
+                }
+                
                 FuncDecl *fd = dynamic_cast<FuncDecl*>(&value);
                 std::vector<std::string> args;
                 for (auto p: fd->params)

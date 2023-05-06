@@ -178,6 +178,7 @@ bool MemoryKernel::put_array_element(MemObject *obj) {
 
 MemoryKernel::MemoryKernel() {
   this->scopes = std::vector<std::vector<MemObject *>>();
+  this->inside_func = false;
 }
 
 MemObject *MemoryKernel::get_object(std::string name) const {
@@ -259,6 +260,12 @@ std::vector<MemObject *> MemoryKernel::extract_array(std::string name) {
 
   return arr;
 }
+
+void MemoryKernel::mark_inside_func() { this->inside_func = true; }
+
+void MemoryKernel::unmark_inside_func() { this->inside_func = false; }
+
+bool MemoryKernel::is_inside_func() const { return this->inside_func; }
 
 /**************************************************
  *         Local Functions Implementation
