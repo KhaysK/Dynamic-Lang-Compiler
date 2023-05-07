@@ -275,9 +275,9 @@ operation_op
 	;
 
 read_keyword
-	: READ_INT { $$ = new AST::VarType("Int"); }
-	| READ_REAL { $$ = new AST::VarType("Real"); }
-	| READ_STRING { $$ = new AST::VarType("String"); }
+	: READ_INT { $$ = new AST::VarType("number"); }
+	| READ_REAL { $$ = new AST::VarType("number"); }
+	| READ_STRING { $$ = new AST::VarType("string"); }
 
 if_statement
 	: IF conditional_expression THEN block if_alternatives END {

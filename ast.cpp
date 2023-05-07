@@ -22,6 +22,18 @@ namespace AST {
         return mem.get_object(value);
     }
 
+    MemObject* VarType::eval(MemoryKernel& mem){
+        
+        if(value == "string")
+            return new MemObject(OBJECT_STRING, "", "");
+        else if(value == "bool")
+            return new MemObject(OBJECT_BOOL, "", "");
+        else if(value == "number")
+            return new MemObject(OBJECT_NUMBER, "", "");
+        
+        return new MemObject(OBJECT_NULL, "", "");
+    }
+
     MemObject* Assign::eval(MemoryKernel& mem){
         if(mod.getMod() != "assign"){
             

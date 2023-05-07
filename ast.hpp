@@ -130,6 +130,7 @@ namespace AST {
     public:
         VarType(std::string v) :
             LeafNode(std::string("VarType"), v) {}; 
+        MemObject* eval(MemoryKernel& mem) override;
     };
 
     class OpType : public LeafNode {
