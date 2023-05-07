@@ -2,6 +2,194 @@
 #include <stdlib.h>
 
 namespace AST {
+    MemObject* NullConst::eval(MemoryKernel& mem){
+        return new MemObject(OBJECT_NULL, "", "null");
+    }
+
+    MemObject* NumberConst::eval(MemoryKernel& mem){
+        return new MemObject(OBJECT_NUMBER, "", value);
+    }
+
+    MemObject* StringConst::eval(MemoryKernel& mem){
+        return new MemObject(OBJECT_STRING, "", value);
+    }
+
+    MemObject* BoolConst::eval(MemoryKernel& mem){
+        return new MemObject(OBJECT_BOOL, "", value);
+    }
+
+    MemObject* Ident::eval(MemoryKernel& mem){
+        return mem.get_object(value);
+    }
+
+    MemObject* Assign::eval(MemoryKernel& mem){
+        if(mod.getMod() != "assign"){
+            
+            if (dynamic_cast<FuncDecl*>(&value)) {
+                if (mem.is_inside_func()){
+                    std::cout << "Can not declare function inside function\n";
+                    exit(1);
+                }
+                
+                FuncDecl *fd = dynamic_cast<FuncDecl*>(&value);
+                std::vector<std::string> args;
+                for (auto p: fd->params)
+                    args.push_back(dynamic_cast<Ident*>(p)->eval(mem)->get_name());
+                
+                MemFunction *func = new MemFunction(name, &fd->funcBody, args);
+                mem.put_object(func);
+            } else{
+                MemObject* assign_value = value.eval(mem);
+                mem.put_object(new MemObject(assign_value->get_type(), name, assign_value->get_value()));
+            }
+        }else{
+
+            if (dynamic_cast<FuncDecl*>(&value)) {
+                FuncDecl *fd = dynamic_cast<FuncDecl*>(&value);
+                std::vector<std::string> args;
+                for (auto p: fd->params)
+                    args.push_back(dynamic_cast<Ident*>(p)->eval(mem)->get_name());
+                
+                MemFunction *func = new MemFunction(name, &fd->funcBody, args);
+                mem.put_object(func);
+            } else {
+                MemObject* assign_value = value.eval(mem);
+                mem.get_object(name)->set_value(assign_value->get_value());
+                mem.get_object(name)->set_type(assign_value->get_type());
+            }
+        }
+        return new MemObject(OBJECT_NULL, "", "null");
+    }
+
+    MemObject* Block::eval(MemoryKernel& mem) {
+        mem.enter_scope();
+        for(ASTNode* node: nodes){
+            node->eval(mem);
+            // mem.dump_mem();
+        }
+        mem.exit_scope();
+        return new MemObject(OBJECT_NULL, "", "null");
+    }
+
+    MemObject* If::eval(MemoryKernel& mem) {
+        
+        MemObject* if_cond = cond.eval(mem);
+        if(if_cond->get_type() == OBJECT_BOOL && if_cond->get_value() == "false"){
+
+            return else_block.eval(mem);
+            
+        }else if(if_cond->get_type() == OBJECT_NUMBER && if_cond->get_value() == "0"){
+            
+            return else_block.eval(mem);
+
+        }else if(if_cond->get_type() == OBJECT_NULL){
+
+            return else_block.eval(mem);
+        }
+
+        return true_block.eval(mem);
+    }
+
+    MemObject* Print::eval(MemoryKernel& mem) {
+        std::cout<<left.eval(mem)->get_value()<<"\n";
+        return new MemObject(OBJECT_NULL, "", "null");
+    }
+
+    MemObject* Read::eval(MemoryKernel& mem){
+        std::string input;
+        std::cin>>input;
+        ObjectType t = OBJECT_STRING;
+        MemObject* input_obj;
+
+        if(type.eval(mem)->get_type() == OBJECT_NUMBER)
+            t = OBJECT_NUMBER;
+
+        input_obj = new MemObject(t, "", input);
+        mem.put_object(input_obj);
+        
+        return input_obj;
+    }
+
+    MemObject* IsOp::eval(MemoryKernel& mem){
+        MemObject* var = left_.eval(mem);
+        MemObject* type = right_.eval(mem);
+        
+        if(var->get_type() == OBJECT_NUMBER && type->get_type() == OBJECT_NUMBER){
+            return new MemObject(OBJECT_BOOL, "", "true");
+        } else if (var->get_type() == OBJECT_BOOL && type->get_type() == OBJECT_BOOL){
+            return new MemObject(OBJECT_BOOL, "", "true");
+        } else if (var->get_type() == OBJECT_STRING && type->get_type() == OBJECT_STRING){
+            return new MemObject(OBJECT_BOOL, "", "true");
+        } else if (var->get_type() == OBJECT_NULL && type->get_type() == OBJECT_NULL){
+            return new MemObject(OBJECT_BOOL, "", "true");
+        }
+        return new MemObject(OBJECT_BOOL, "", "false");
+    }
+
+    MemObject* Plus::eval(MemoryKernel& mem) {
+        MemObject* left = left_.eval(mem);
+        MemObject* right = right_.eval(mem);
+
+        if(left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_NUMBER){
+
+            int result = std::stoi(left->get_value()) + std::stoi(right->get_value());
+            return new MemObject(OBJECT_NUMBER, "", std::to_string(result));
+
+        }else if(left->get_type() == OBJECT_BOOL && right->get_type() == OBJECT_BOOL){
+            
+            if(left->get_value() == "true" || right->get_value() == "true")
+                return new MemObject(OBJECT_BOOL, "", "true"); 
+            else 
+                return new MemObject(OBJECT_BOOL, "", "false"); 
+            
+        }else if(left->get_type() == OBJECT_BOOL && right->get_type() == OBJECT_NUMBER ||
+                left->get_type() == OBJECT_BOOL && right->get_type() == OBJECT_NUMBER ){
+            
+            return new MemObject(OBJECT_NULL, "", "null"); 
+        }
+
+        return new MemObject(OBJECT_STRING, "", left->get_value() + right->get_value()); 
+    }
+
+    MemObject* Minus::eval(MemoryKernel& mem) {
+        MemObject* left = left_.eval(mem);
+        MemObject* right = right_.eval(mem);
+
+        if(left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_NUMBER){
+
+            int result = std::stoi(left->get_value()) - std::stoi(right->get_value());
+            return new MemObject(OBJECT_NUMBER, "", std::to_string(result));
+        }
+        
+        return new MemObject(OBJECT_NULL, "", "null"); 
+    }
+
+    MemObject* Times::eval(MemoryKernel& mem){
+        MemObject* left = left_.eval(mem);
+        MemObject* right = right_.eval(mem);
+
+        if(left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_NUMBER){
+
+            int result = std::stoi(left->get_value()) * std::stoi(right->get_value());
+            return new MemObject(OBJECT_NUMBER, "", std::to_string(result));
+        }
+        
+        return new MemObject(OBJECT_NULL, "", "null"); 
+    }
+
+    MemObject* Div::eval(MemoryKernel& mem){
+        MemObject* left = left_.eval(mem);
+        MemObject* right = right_.eval(mem);
+
+        if(left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_NUMBER){
+
+            int result = std::stoi(left->get_value()) / std::stoi(right->get_value());
+            return new MemObject(OBJECT_NUMBER, "", std::to_string(result));
+        }
+        
+        return new MemObject(OBJECT_NULL, "", "null"); 
+    };
+
     void ASTNode::json_indent(std::ostream& out, AST_print_context& ctx) {
         if (ctx.indent_ > 0) {
             out << std::endl;
@@ -51,61 +239,6 @@ namespace AST {
         json_child("value", value, out, ctx, ' ');
         json_close(out, ctx);
     }
-    std::string Assign::eval(MemoryKernel& mem){
-        if(mod.getMod() != "assign"){
-
-            if(dynamic_cast<StringConst*>(&value))
-                mem.put_object(new MemObject(OBJECT_STRING, name, value.eval(mem)));
-            // else if (dynamic_cast<NumberConst*>(&value))
-                // mem.put_object(new MemObject(OBJECT_NUMBER, name.eval(mem), value.eval(mem)));
-            else if (dynamic_cast<BoolConst*>(&value))
-                mem.put_object(new MemObject(OBJECT_BOOL, name, value.eval(mem)));
-            else if (dynamic_cast<NullConst*>(&value))
-                mem.put_object(new MemObject(OBJECT_NULL, name, value.eval(mem)));
-            else if (dynamic_cast<FuncDecl*>(&value)) {
-                if (mem.is_inside_func()){
-                    std::cout << "Can not declare function inside function\n";
-                    exit(1);
-                }
-                
-                FuncDecl *fd = dynamic_cast<FuncDecl*>(&value);
-                std::vector<std::string> args;
-                for (auto p: fd->params)
-                    args.push_back(dynamic_cast<Ident*>(p)->get_name());
-                
-                MemFunction *func = new MemFunction(name, &fd->funcBody, args);
-                mem.put_object(func);
-            } else
-                mem.put_object(new MemObject(OBJECT_NUMBER, name, value.eval(mem)));
-
-        }else if(mod.getMod() == "assign"){
-
-            if(dynamic_cast<StringConst*>(&value)){
-                mem.get_object(name)->set_value(value.eval(mem));
-                mem.get_object(name)->set_type(OBJECT_STRING);
-            }
-            else if (dynamic_cast<NumberConst*>(&value)){
-                mem.get_object(name)->set_value(value.eval(mem));
-                mem.get_object(name)->set_type(OBJECT_NUMBER);
-            }
-            else if (dynamic_cast<BoolConst*>(&value)){
-                mem.get_object(name)->set_value(value.eval(mem));
-                mem.get_object(name)->set_type(OBJECT_BOOL);
-            } else if (dynamic_cast<FuncDecl*>(&value)) {
-                FuncDecl *fd = dynamic_cast<FuncDecl*>(&value);
-                std::vector<std::string> args;
-                for (auto p: fd->params)
-                    args.push_back(dynamic_cast<Ident*>(p)->get_name());
-                
-                MemFunction *func = new MemFunction(name, &fd->funcBody, args);
-                mem.put_object(func);
-            } else {
-                mem.get_object(name)->set_value(value.eval(mem));
-                mem.get_object(name)->set_type(OBJECT_NUMBER);
-            }
-        }
-        return "Invalid operation";
-    };
 
     void If::json(std::ostream& out, AST_print_context& ctx) {
         json_head("If", out, ctx);

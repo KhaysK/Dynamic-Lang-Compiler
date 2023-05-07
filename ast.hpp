@@ -27,9 +27,7 @@ namespace AST {
     class ASTNode {
     public:
         virtual void json(std::ostream& out, AST_print_context& mem) = 0;
-        virtual std::string eval(MemoryKernel& mem) {
-            return "";
-        };
+        virtual MemObject* eval(MemoryKernel& mem);
         std::string str() {
             std::stringstream ss;
             AST_print_context mem;
@@ -54,12 +52,7 @@ namespace AST {
     public:
         explicit NullConst() {}
         void json(std::ostream& out, AST_print_context& mem) override;
-        std::string get_type(){
-            return "null";
-        };
-        std::string eval(MemoryKernel& mem) override{
-            return "null";
-        };
+        MemObject* eval(MemoryKernel& mem) override;
     };
 
     // Leaf nodes
@@ -81,12 +74,6 @@ namespace AST {
                 leaf_type{l_t}, value{v} {};
     public:
         void json(std::ostream& out, AST_print_context& mem) override;
-        std::string eval(MemoryKernel& mem) override{
-            return value;
-        }
-        std::string get_type(){
-            return leaf_type;
-        }
     };
 
     /**
@@ -98,6 +85,7 @@ namespace AST {
     public:
         NumberConst(std::string v) : 
             LeafNode(std::string("Number"), v) {};  
+        MemObject* eval(MemoryKernel& mem) override;
     };
 
     /**
@@ -107,6 +95,7 @@ namespace AST {
     public:
         StringConst(std::string v) :
             LeafNode(std::string("String"), v) {};
+        MemObject* eval(MemoryKernel& mem) override;
     };
 
     /**
@@ -118,6 +107,7 @@ namespace AST {
     public:
         BoolConst(std::string v) :
             LeafNode(std::string("Bool"), v) {};
+        MemObject* eval(MemoryKernel& mem) override;
     };
 
     /**
@@ -127,12 +117,7 @@ namespace AST {
     public:
         explicit Ident(std::string txt) :
             LeafNode(std::string("Ident"), txt) {};
-        std::string eval(MemoryKernel& mem) override{
-            return mem.get_object(value)->get_value();
-        }
-        std::string get_name(){
-            return value;
-        }
+        MemObject* eval(MemoryKernel& mem) override;
     };
 
     /**
@@ -169,9 +154,6 @@ namespace AST {
         void json(std::ostream& out, AST_print_context& mem) override;
         void setMod(std::string new_mode) { mod = new_mode; }
         std::string getMod() { return mod; }
-        std::string eval(MemoryKernel& mem) override{
-            return mod;
-        }
     };
     
     /**
@@ -194,7 +176,7 @@ namespace AST {
             mod.setMod(mod_.getMod());
         }
         void json(std::ostream& out, AST_print_context& mem) override;
-        std::string eval(MemoryKernel& mem) override;
+        MemObject* eval(MemoryKernel& mem) override;
     };
 
 
@@ -244,16 +226,8 @@ namespace AST {
         void append(ASTNode* node) { nodes.push_back(node); }
         std::vector<ASTNode*> getNodes() { return nodes; }
         void json(std::ostream& out, AST_print_context& mem) override;
-        std::string eval(MemoryKernel& mem) override{
-            mem.enter_scope();
-            for(ASTNode* node: nodes){
-                node->eval(mem);
-                // mem.dump_mem();
-            }
-            mem.exit_scope();
-            return "Done";
-        }
-     };
+        MemObject* eval(MemoryKernel& mem) override;
+    };
 
     /**
      * Условное ветвление
@@ -270,36 +244,7 @@ namespace AST {
         explicit If(ASTNode &cond, Block &ifpart, Block &elsepart) :
             cond{cond}, true_block{ifpart}, else_block{elsepart} { };
         void json(std::ostream& out, AST_print_context& mem) override;
-        std::string eval(MemoryKernel& mem) override{
-            if(dynamic_cast<BoolConst*>(&cond)){
- 
-                if (cond.eval(mem) == "false")
-                    return else_block.eval(mem);
-                
-            }else if(dynamic_cast<NumberConst*>(&cond)){
-
-                if (cond.eval(mem) == "0")
-                    return else_block.eval(mem);
-
-            }else if(dynamic_cast<NullConst*>(&cond)){
-
-                return else_block.eval(mem);
-
-            }else if(dynamic_cast<Ident*>(&cond)){
-
-                Ident* if_cond = dynamic_cast<Ident*>(&cond);
-                if(if_cond->get_type() == "Bool" && cond.eval(mem) == "false"){
-                    return else_block.eval(mem);
-                }else if(if_cond->get_type() == "Number" && cond.eval(mem) == "0"){
-                    return else_block.eval(mem);
-                }else if(if_cond->get_type() == "Null"){
-                    return else_block.eval(mem);
-                }
-
-            }else if(cond.eval(mem) == "false") return else_block.eval(mem);
-
-            return true_block.eval(mem);
-        };
+        MemObject* eval(MemoryKernel& mem) override;
     };
 
     /**
@@ -310,10 +255,7 @@ namespace AST {
     public:
         explicit Print(ASTNode &l) : left{l} {}
         void json(std::ostream& out, AST_print_context& mem) override;
-        std::string eval(MemoryKernel& mem) override{
-            std::cout<<left.eval(mem)<<"\n";
-            return ""; // Returns "" value but it's useless anyway 
-        }
+        MemObject* eval(MemoryKernel& mem) override;
     };
     // Bin Operations
 
@@ -352,16 +294,7 @@ namespace AST {
         Read(ASTNode &l, std::string n) :
                 name{n}, type{l} {};
         void json(std::ostream& out, AST_print_context& mem) override;
-        std::string eval(MemoryKernel& mem) override{
-            std::string input;
-            std::cin>>input;
-            ObjectType t = OBJECT_STRING;
-            if(type.eval(mem) == "Real" || type.eval(mem) == "Int")
-                t = OBJECT_NUMBER;
-            mem.put_object(new MemObject(t, name, input));
-            
-            return "null";
-        }
+        MemObject* eval(MemoryKernel& mem) override;
     };
 
     /**
@@ -374,20 +307,7 @@ namespace AST {
     public:
         IsOp(ASTNode &l, ASTNode &r) :
                 BinOp(std::string("Is"),  l, r) {};
-        std::string eval(MemoryKernel& mem) override{
-            MemObject* var = mem.get_object(dynamic_cast<Ident*>(&left_)->get_name());
-
-            if(var->get_type() == OBJECT_NUMBER && right_.eval(mem) == "number"){
-                return "true";
-            } else if (var->get_type() == OBJECT_BOOL && right_.eval(mem) == "bool"){
-                return "true";
-            } else if (var->get_type() == OBJECT_STRING && right_.eval(mem) == "string"){
-                return "true";
-            } else if (var->get_type() == OBJECT_NULL && right_.eval(mem) == "null"){
-                return "true";
-            }
-            return "false";
-        }; 
+        MemObject* eval(MemoryKernel& mem) override;
     };
 
     /**
@@ -397,55 +317,7 @@ namespace AST {
     public:
         Plus(ASTNode &l, ASTNode &r) :
                 BinOp(std::string("Plus"),  l, r) {};
-        std::string eval(MemoryKernel& mem) override{
-            if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
-
-                int result = std::stoi(left_.eval(mem)) + std::stoi(right_.eval(mem));
-                return std::to_string(result);
-
-            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<Ident*>(&right_)){
-
-                MemObject* left = mem.get_object(dynamic_cast<Ident*>(&left_)->get_name());
-                MemObject* right = mem.get_object(dynamic_cast<Ident*>(&right_)->get_name());
-                if(left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_NUMBER){
-
-                    double first, second;
-                    std::stringstream _l(left->get_value());
-                    std::stringstream _r(right->get_value());
-                    _l >> first;
-                    _r >> second;
-
-                    return std::to_string(first + second);
-                    
-                }
-            
-            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
-
-                MemObject* left = mem.get_object(dynamic_cast<Ident*>(&left_)->get_name());
-                if(left->get_type() == OBJECT_NUMBER){
-                    double first, second;
-                    std::stringstream _l(left->get_value());
-                    std::stringstream _r(right_.eval(mem));
-                    _l >> first;
-                    _r >> second;
-                    return std::to_string(first + second);
-                }
-
-            }else if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<Ident*>(&right_)){
-
-                MemObject* right = mem.get_object(dynamic_cast<Ident*>(&right_)->get_name());
-                if(right->get_type() == OBJECT_NUMBER){
-                    double first, second;
-                    std::stringstream _l(left_.eval(mem));
-                    std::stringstream _r(right->get_value());
-                    _l >> first;
-                    _r >> second;
-                    return std::to_string(first + second);
-                }
-
-            }
-            return left_.eval(mem) + right_.eval(mem);
-        }; 
+        MemObject* eval(MemoryKernel& mem) override;
     };
 
     /**
@@ -455,44 +327,7 @@ namespace AST {
     public:
         Minus(ASTNode &l, ASTNode &r) :
             BinOp(std::string("Minus"),  l, r) {};
-        std::string eval(MemoryKernel& mem) override{
-            if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
-
-                int result = std::stoi(left_.eval(mem)) - std::stoi(right_.eval(mem));
-                return std::to_string(result);
-
-            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<Ident*>(&right_)){
-
-                Ident* left = dynamic_cast<Ident*>(&left_);
-                Ident* right = dynamic_cast<Ident*>(&right_);
-                if(left->get_type() == "Number" && right->get_type() == "Number"){
-                    int result = std::stoi(left_.eval(mem)) - std::stoi(right_.eval(mem));
-                    return std::to_string(result);
-                }
-
-            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
-
-                 MemObject* left = mem.get_object(dynamic_cast<Ident*>(&left_)->get_name());
-                if(left->get_type() == OBJECT_NUMBER){
-                    double first, second;
-                    std::stringstream _l(left->get_value());
-                    std::stringstream _r(right_.eval(mem));
-                    _l >> first;
-                    _r >> second;
-                    return std::to_string(first - second);
-                }
-
-            }else if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<Ident*>(&right_)){
-
-                Ident* right = dynamic_cast<Ident*>(&right_);
-                if(right->get_type() == "Number"){
-                    int result = std::stoi(left_.eval(mem)) - std::stoi(right_.eval(mem));
-                    return std::to_string(result);
-                }
-
-            }
-            return "Invalid operation";
-        };
+        MemObject* eval(MemoryKernel& mem) override;
     };
 
     /**
@@ -505,47 +340,7 @@ namespace AST {
     public:
         Times(ASTNode &l, ASTNode &r) :
                 BinOp(std::string("Times"),  l, r) {};
-        std::string eval(MemoryKernel& mem) override{
-            if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
-                
-                int result = std::stoi(left_.eval(mem)) * std::stoi(right_.eval(mem));
-                return std::to_string(result);
-
-            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<Ident*>(&right_)){
-
-                MemObject* left = mem.get_object(dynamic_cast<Ident*>(&left_)->get_name());
-                MemObject* right = mem.get_object(dynamic_cast<Ident*>(&right_)->get_name());
-                if(left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_NUMBER){
-
-                    double first, second;
-                    std::stringstream _l(left->get_value());
-                    std::stringstream _r(right->get_value());
-                    _l >> first;
-                    _r >> second;
-
-                    return std::to_string(first * second);
-                    
-                }
-
-            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
-
-                Ident* left = dynamic_cast<Ident*>(&left_);
-                if(left->get_type() == "Number"){
-                    int result = std::stoi(left_.eval(mem)) * std::stoi(right_.eval(mem));
-                    return std::to_string(result);
-                }
-
-            }else if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<Ident*>(&right_)){
-
-                Ident* right = dynamic_cast<Ident*>(&right_);
-                if(right->get_type() == "Number"){
-                    int result = std::stoi(left_.eval(mem)) * std::stoi(right_.eval(mem));
-                    return std::to_string(result);
-                }
-
-            }
-            return "Invalid operation";
-        };
+        MemObject* eval(MemoryKernel& mem) override;
     };
 
     /**
@@ -555,49 +350,7 @@ namespace AST {
     public:
         Div(ASTNode &l, ASTNode &r) :
                 BinOp(std::string("Div"),  l, r) {};
-        std::string eval(MemoryKernel& mem) override{
-            if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
-                
-                int result = std::stoi(left_.eval(mem)) * std::stoi(right_.eval(mem));
-                return std::to_string(result);
-
-            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<Ident*>(&right_)){
-
-                MemObject* left = mem.get_object(dynamic_cast<Ident*>(&left_)->get_name());
-                MemObject* right = mem.get_object(dynamic_cast<Ident*>(&right_)->get_name());
-                if(left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_NUMBER){
-
-                    double first, second;
-                    std::stringstream _l(left->get_value());
-                    std::stringstream _r(right->get_value());
-                    _l >> first;
-                    _r >> second;
-
-                    return std::to_string(first / second);
-                    
-                }
-
-            }else if(dynamic_cast<Ident*>(&left_) && dynamic_cast<NumberConst*>(&right_)){
-
-                Ident* left = dynamic_cast<Ident*>(&left_);
-                if(left->get_type() == "Number"){
-                    int result = std::stoi(left_.eval(mem)) / std::stoi(right_.eval(mem));
-                    return std::to_string(result);
-                }
-
-            }else if(dynamic_cast<NumberConst*>(&left_) && dynamic_cast<Ident*>(&right_)){
-
-                Ident* right = dynamic_cast<Ident*>(&right_);
-                if(right->get_type() == "Number"){
-                    int result = std::stoi(left_.eval(mem)) / std::stoi(right_.eval(mem));
-                    return std::to_string(result);
-                }
-
-            }
-            // int result = std::stoi(left_.eval(mem)) / std::stoi(right_.eval(mem));
-            // return std::to_string(result);
-            return "Invalid";
-        };
+        MemObject* eval(MemoryKernel& mem) override;
     };
 
     // Condition expressions
