@@ -55,6 +55,12 @@ class MemObject {
   // increment number of references
   // (needed to show warning if object was not used)
   void ref_inc();
+
+  // object math operations
+  MemObject* add(MemObject* obj);
+  MemObject* subtract(MemObject* obj);
+  MemObject* multiplyBy(MemObject* obj);
+  MemObject* divideBy(MemObject* obj);
 };
 
 /**

@@ -142,65 +142,152 @@ namespace AST {
         MemObject* left = left_.eval(mem);
         MemObject* right = right_.eval(mem);
 
-        if(left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_NUMBER){
-
-            int result = std::stoi(left->get_value()) + std::stoi(right->get_value());
-            return new MemObject(OBJECT_NUMBER, "", std::to_string(result));
-
-        }else if(left->get_type() == OBJECT_BOOL && right->get_type() == OBJECT_BOOL){
-            
-            if(left->get_value() == "true" || right->get_value() == "true")
-                return new MemObject(OBJECT_BOOL, "", "true"); 
-            else 
-                return new MemObject(OBJECT_BOOL, "", "false"); 
-            
-        }else if(left->get_type() == OBJECT_BOOL && right->get_type() == OBJECT_NUMBER ||
-                left->get_type() == OBJECT_BOOL && right->get_type() == OBJECT_NUMBER ){
-            
-            return new MemObject(OBJECT_NULL, "", "null"); 
-        }
-
-        return new MemObject(OBJECT_STRING, "", left->get_value() + right->get_value()); 
+        return left->add(right); 
     }
 
     MemObject* Minus::eval(MemoryKernel& mem) {
         MemObject* left = left_.eval(mem);
         MemObject* right = right_.eval(mem);
 
-        if(left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_NUMBER){
-
-            int result = std::stoi(left->get_value()) - std::stoi(right->get_value());
-            return new MemObject(OBJECT_NUMBER, "", std::to_string(result));
-        }
-        
-        return new MemObject(OBJECT_NULL, "", "null"); 
+        return left->subtract(right); 
     }
 
     MemObject* Times::eval(MemoryKernel& mem){
         MemObject* left = left_.eval(mem);
         MemObject* right = right_.eval(mem);
 
-        if(left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_NUMBER){
-
-            int result = std::stoi(left->get_value()) * std::stoi(right->get_value());
-            return new MemObject(OBJECT_NUMBER, "", std::to_string(result));
-        }
-        
-        return new MemObject(OBJECT_NULL, "", "null"); 
+        return left->multiplyBy(right);
     }
 
     MemObject* Div::eval(MemoryKernel& mem){
         MemObject* left = left_.eval(mem);
         MemObject* right = right_.eval(mem);
 
-        if(left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_NUMBER){
-
-            int result = std::stoi(left->get_value()) / std::stoi(right->get_value());
-            return new MemObject(OBJECT_NUMBER, "", std::to_string(result));
-        }
-        
-        return new MemObject(OBJECT_NULL, "", "null"); 
+        return left->multiplyBy(right);
     };
+
+    MemObject* Equals::eval(MemoryKernel& mem) {
+        MemObject* left = left_.eval(mem);
+        MemObject* right = right_.eval(mem);
+
+        if (left->get_value() == right->get_value()) {
+            return new MemObject(OBJECT_BOOL, "", "true");
+        }
+
+        return new MemObject(OBJECT_BOOL, "", "false");
+    }
+
+    MemObject* Not::eval(MemoryKernel& mem) {
+        MemObject* _left = left.eval(mem);
+
+        if (_left->get_value() == "true") {
+            return new MemObject(OBJECT_BOOL, "", "false");
+        }
+
+        return new MemObject(OBJECT_BOOL, "", "true");
+    }
+
+    MemObject* Not_Equals::eval(MemoryKernel& mem) {
+        MemObject* left = left_.eval(mem);
+        MemObject* right = right_.eval(mem);
+
+        MemObject* _equals = (new Equals(left_, right_))->eval(mem);
+
+        if (_equals->get_value() == "true") {
+            return new MemObject(OBJECT_BOOL, "", "false");
+        }
+
+        return new MemObject(OBJECT_BOOL, "", "true");
+    }
+
+    MemObject* And::eval(MemoryKernel& mem) {
+        MemObject* left = left_.eval(mem);
+        MemObject* right = right_.eval(mem);
+
+        // bool and bool
+        if (left->get_type() == OBJECT_BOOL && left->get_type() == OBJECT_BOOL) {
+            return left->multiplyBy(right);
+        }
+        // TODO:  Add number support 
+        else {
+            return new MemObject(OBJECT_BOOL, "", "false");
+        }
+    }
+
+    MemObject* Or::eval(MemoryKernel& mem) {
+        MemObject* left = left_.eval(mem);
+        MemObject* right = right_.eval(mem);
+
+        // bool and bool
+        if (left->get_type() == OBJECT_BOOL && left->get_type() == OBJECT_BOOL) {
+            return left->add(right);
+        }
+        // TODO:  Add number support 
+        else {
+            return new MemObject(OBJECT_BOOL, "", "false");
+        }
+    }
+
+    MemObject* Less::eval(MemoryKernel& mem) {
+        MemObject* left = left_.eval(mem);
+        MemObject* right = right_.eval(mem);
+
+        // строки
+        if (left->get_type() == OBJECT_STRING || right->get_type() == OBJECT_STRING) {
+            if (left->get_value().compare(right->get_value()) < 0) {
+                return new MemObject(OBJECT_BOOL, "", "true");
+            }
+        }
+        // числа
+        if (left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_NUMBER) {
+            if (left->subtract(right) < 0) {
+                return new MemObject(OBJECT_BOOL, "", "true");
+            }
+        }
+
+        return new MemObject(OBJECT_BOOL, "", "false");
+    }
+
+    MemObject* Less_E::eval(MemoryKernel& mem) {
+        MemObject* left = left_.eval(mem);
+        MemObject* right = right_.eval(mem);
+
+        MemObject* _less = (new Less(left_, right_))->eval(mem);
+        MemObject* _equals = (new Equals(left_, right_))->eval(mem);
+
+        return _less->add(_equals);
+    }
+
+    MemObject* Greater::eval(MemoryKernel& mem) {
+        MemObject* left = left_.eval(mem);
+        MemObject* right = right_.eval(mem);
+
+        // строки
+        if (left->get_type() == OBJECT_STRING || right->get_type() == OBJECT_STRING) {
+            if (left->get_value().compare(right->get_value()) > 0) {
+                return new MemObject(OBJECT_BOOL, "", "true");
+            }
+        }
+        // числа
+        if (left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_NUMBER) {
+            if (left->subtract(right) > 0) {
+                return new MemObject(OBJECT_BOOL, "", "true");
+            }
+        }
+
+        return new MemObject(OBJECT_BOOL, "", "false");
+    }
+
+    MemObject* Greater_E::eval(MemoryKernel& mem) {
+        MemObject* left = left_.eval(mem);
+        MemObject* right = right_.eval(mem);
+
+        MemObject* _greater = (new Greater(left_, right_))->eval(mem);
+        MemObject* _equals = (new Equals(left_, right_))->eval(mem);
+
+        return _greater->add(_equals);
+    }
+
 
     void ASTNode::json_indent(std::ostream& out, AST_print_context& ctx) {
         if (ctx.indent_ > 0) {
