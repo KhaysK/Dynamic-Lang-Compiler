@@ -2,6 +2,10 @@
 #include <stdlib.h>
 
 namespace AST {
+    MemObject *ASTNode::eval(MemoryKernel &mem) {
+        return new MemObject(OBJECT_NULL, "", "null");
+    }
+
     MemObject* NullConst::eval(MemoryKernel& mem){
         return new MemObject(OBJECT_NULL, "", "null");
     }
