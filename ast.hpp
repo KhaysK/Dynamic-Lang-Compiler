@@ -571,15 +571,22 @@ namespace AST {
         friend Assign;
         std::vector<ASTNode*> params;
         Block &funcBody;
-        ASTNode &expr;
     public:
-        explicit FuncDecl(Block &func_body, ASTNode &func_expr) :
-            funcBody{func_body}, expr{func_expr} {};
+        explicit FuncDecl(Block &func_body) :
+            funcBody{func_body} {};
         void flat(Block* block) {
             for (auto &i : block->getNodes()) {
                 params.push_back(i);
             }
         }
+        void json(std::ostream& out, AST_print_context& mem) override;
+    };
+
+    class Return: public ASTNode {
+        ASTNode &expr;
+    public:
+        explicit Return(ASTNode &func_expr) :
+            expr{func_expr} {};
         void json(std::ostream& out, AST_print_context& mem) override;
     };
 

@@ -646,7 +646,6 @@ namespace AST {
         }
         out << "]";
         json_child("func_body", funcBody, out, ctx);
-        json_child("func_expr", expr, out, ctx);
         json_close(out, ctx);
     }
 
@@ -662,6 +661,12 @@ namespace AST {
         }
         out << "]";
         json_close(out, ctx);
+    }
+
+    void Return::json(std::ostream& out, AST_print_context& ctx) {
+        json_head("Return", out, ctx);
+        json_child("return expr", expr, out, ctx);
+        json_close(out, ctx);   
     }
 
     void Read::json(std::ostream& out, AST_print_context& ctx) {
