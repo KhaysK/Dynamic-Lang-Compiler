@@ -142,28 +142,275 @@ namespace AST {
         MemObject* left = left_.eval(mem);
         MemObject* right = right_.eval(mem);
 
-        return left->add(right); 
+        // number + number = number
+        if (left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_NUMBER) {
+            double first, second;
+            std::stringstream _l(left->get_value());
+            std::stringstream _r(right->get_value());
+            _l >> first;
+            _r >> second;
+            return new MemObject(OBJECT_NUMBER, "", std::to_string(first + second));
+        }
+
+        // string + string = string
+        else if (left->get_type() == OBJECT_STRING && right->get_type() == OBJECT_STRING) {
+            return new MemObject(OBJECT_STRING, "", left->get_value() + right->get_value());
+        }
+
+        // bool + bool = bool
+        else if (left->get_type() == OBJECT_BOOL && right->get_type() == OBJECT_BOOL) {
+            if (left->get_value() == "true" || right->get_value() == "true") {
+                return new MemObject(OBJECT_BOOL, "", "true");
+            }
+            return new MemObject(OBJECT_NUMBER, "", "false");
+        }
+
+        // null + null = null
+        else if (left->get_type() == OBJECT_NULL && right->get_type() == OBJECT_NULL) {
+            return new MemObject(OBJECT_NULL, "", "null");
+        }
+
+        // number + string = string
+        else if (left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_STRING) {
+            return new MemObject(OBJECT_STRING, "", left->get_value() + right->get_value());
+        }
+        else if (left->get_type() == OBJECT_STRING && right->get_type() == OBJECT_NUMBER) {
+            return new MemObject(OBJECT_STRING, "", left->get_value() + right->get_value());
+        }
+
+        // number + bool = num + 0/1
+        else if (left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_BOOL) {
+            double first, second;
+            std::stringstream _l(left->get_value());
+            std::string _bool = "0";
+            if (right->get_value() == "true") _bool = "1";
+            std::stringstream _r(_bool);
+            _l >> first;
+            _r >> second;
+            return new MemObject(OBJECT_NUMBER, "", std::to_string(first + second));
+        }
+        else if (left->get_type() == OBJECT_BOOL && right->get_type() == OBJECT_NUMBER) {
+            double first, second;
+            std::stringstream _l(right->get_value());
+            std::string _bool = "0";
+            if (left->get_value() == "true") _bool = "1";
+            std::stringstream _r(_bool);
+            _l >> first;
+            _r >> second;
+            return new MemObject(OBJECT_NUMBER, "", std::to_string(first + second));
+        }
+
+        // num + null = num
+        else if (left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_NULL) {
+            return new MemObject(OBJECT_NUMBER, "", left->get_value());
+        }
+        else if (left->get_type() == OBJECT_NULL && right->get_type() == OBJECT_NUMBER) {
+            return new MemObject(OBJECT_NUMBER, "", right->get_value());
+        }
+
+        // string + bool = string
+        else if (left->get_type() == OBJECT_STRING && right->get_type() == OBJECT_BOOL) {
+            return new MemObject(OBJECT_STRING, "", left->get_value() + right->get_value());
+        }
+        else if (left->get_type() == OBJECT_BOOL && right->get_type() == OBJECT_STRING) {
+            return new MemObject(OBJECT_STRING, "", left->get_value() + right->get_value());
+        }
+
+        // string + null = string
+        else if (left->get_type() == OBJECT_STRING && right->get_type() == OBJECT_NULL) {
+            return new MemObject(OBJECT_STRING, "", left->get_value());
+        }
+        else if (left->get_type() == OBJECT_NULL && right->get_type() == OBJECT_STRING) {
+            return new MemObject(OBJECT_STRING, "", right->get_value());
+        }
+
+        // bool + null = bool
+        else if (left->get_type() == OBJECT_BOOL && right->get_type() == OBJECT_NULL) {
+            return new MemObject(OBJECT_BOOL, "", left->get_value());
+        }
+        else if (left->get_type() == OBJECT_NULL && right->get_type() == OBJECT_BOOL) {
+            return new MemObject(OBJECT_BOOL, "", right->get_value());
+        }
+
+        // FIXME: throw error
+        else {
+            return new MemObject(OBJECT_NULL, "", "null");
+        }
     }
 
     MemObject* Minus::eval(MemoryKernel& mem) {
         MemObject* left = left_.eval(mem);
         MemObject* right = right_.eval(mem);
 
-        return left->subtract(right); 
+        // number - number = number
+        if (left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_NUMBER) {
+            double first, second;
+            std::stringstream _l(left->get_value());
+            std::stringstream _r(right->get_value());
+            _l >> first;
+            _r >> second;
+            return new MemObject(OBJECT_NUMBER, "", std::to_string(first - second));
+        }
+
+        // bool - bool = 0/1 - 0/1
+        else if (left->get_type() == OBJECT_BOOL && right->get_type() == OBJECT_BOOL) {
+            double first, second;
+            std::string _bool_l = "0";
+            if (left->get_value() == "true") _bool_l = "1";
+            std::stringstream _l(_bool_l);
+            std::string _bool_r = "0";
+            if (right->get_value() == "true") _bool_r = "1";
+            std::stringstream _r(_bool_r);
+            _l >> first;
+            _r >> second;
+            return new MemObject(OBJECT_NUMBER, "", std::to_string(first - second));
+        }
+
+        // number - bool = num - 0/1
+        else if (left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_BOOL) {
+            double first, second;
+            std::stringstream _l(left->get_value());
+            std::string _bool = "0";
+            if (right->get_value() == "true") _bool = "1";
+            std::stringstream _r(_bool);
+            _l >> first;
+            _r >> second;
+            return new MemObject(OBJECT_NUMBER, "", std::to_string(first - second));
+        }
+        else if (left->get_type() == OBJECT_BOOL && right->get_type() == OBJECT_NUMBER) {
+            double first, second;
+            std::stringstream _l(right->get_value());
+            std::string _bool = "0";
+            if (left->get_value() == "true") _bool = "1";
+            std::stringstream _r(_bool);
+            _l >> first;
+            _r >> second;
+            return new MemObject(OBJECT_NUMBER, "", std::to_string(first - second));
+        }
+
+        else {
+            return new MemObject(OBJECT_NULL, "", "null");
+        }
     }
 
     MemObject* Times::eval(MemoryKernel& mem){
         MemObject* left = left_.eval(mem);
         MemObject* right = right_.eval(mem);
 
-        return left->multiplyBy(right);
+        // number * number = number
+        if (left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_NUMBER) {
+            double first, second;
+            std::stringstream _l(left->get_value());
+            std::stringstream _r(right->get_value());
+            _l >> first;
+            _r >> second;
+            return new MemObject(OBJECT_NUMBER, "", std::to_string(first * second));
+        }
+
+        // bool * bool = bool
+        else if (left->get_type() == OBJECT_BOOL && right->get_type() == OBJECT_BOOL) {
+            if (left->get_value() == "false" || right->get_value() == "false") {
+                return new MemObject(OBJECT_BOOL, "", "false");
+            }
+            return new MemObject(OBJECT_NUMBER, "", "true");
+        }
+
+        // number * bool = num * 0/1
+        else if (left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_BOOL) {
+            double first, second;
+            std::stringstream _l(left->get_value());
+            std::string _bool = "0";
+            if (right->get_value() == "true") _bool = "1";
+            std::stringstream _r(_bool);
+            _l >> first;
+            _r >> second;
+            return new MemObject(OBJECT_NUMBER, "", std::to_string(first * second));
+        }
+        else if (left->get_type() == OBJECT_BOOL && right->get_type() == OBJECT_NUMBER) {
+            double first, second;
+            std::stringstream _l(right->get_value());
+            std::string _bool = "0";
+            if (left->get_value() == "true") _bool = "1";
+            std::stringstream _r(_bool);
+            _l >> first;
+            _r >> second;
+            return new MemObject(OBJECT_NUMBER, "", std::to_string(first * second));
+        }
+
+        else {
+            return new MemObject(OBJECT_NULL, "", "null");
+        }
     }
 
     MemObject* Div::eval(MemoryKernel& mem){
         MemObject* left = left_.eval(mem);
         MemObject* right = right_.eval(mem);
 
-        return left->multiplyBy(right);
+        // number / number = number
+        if (left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_NUMBER) {
+            if (right->get_value() == "0") {
+                // TODO: throw error
+                return new MemObject(OBJECT_NULL, "", "null");
+            }
+            double first, second;
+            std::stringstream _l(left->get_value());
+            std::stringstream _r(right->get_value());
+            _l >> first;
+            _r >> second;
+            return new MemObject(OBJECT_NUMBER, "", std::to_string(first / second));
+        }
+        
+        // bool / bool = 0/1 / 0/1
+        else if (left->get_type() == OBJECT_BOOL && right->get_type() == OBJECT_BOOL) {
+            double first, second;
+            std::string _bool_l = "0";
+            if (left->get_value() == "true") _bool_l = "1";
+            std::stringstream _l(_bool_l);
+            std::string _bool_r = "0";
+            if (right->get_value() == "true") _bool_r = "1";
+            std::stringstream _r(_bool_r);
+            if (_bool_r == "0") {
+                // TODO: throw error
+                return new MemObject(OBJECT_NULL, "", "null");
+            }
+            _l >> first;
+            _r >> second;
+            return new MemObject(OBJECT_NUMBER, "", std::to_string(first - second));
+        }
+        
+        // number / bool = num / 0/1
+        else if (left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_BOOL) {
+            double first, second;
+            std::stringstream _l(left->get_value());
+            std::string _bool = "0";
+            if (right->get_value() == "true") _bool = "1";
+            if (_bool == "0") {
+                // TODO: throw error
+                return new MemObject(OBJECT_NULL, "", "null");
+            }
+            std::stringstream _r(_bool);
+            _l >> first;
+            _r >> second;
+            return new MemObject(OBJECT_NUMBER, "", std::to_string(first - second));
+        }
+        else if (left->get_type() == OBJECT_BOOL && right->get_type() == OBJECT_NUMBER) {
+            if (right->get_value() == "0") {
+                // TODO: throw error
+                return new MemObject(OBJECT_NULL, "", "null");
+            }
+            double first, second;
+            std::stringstream _l(right->get_value());
+            std::string _bool = "0";
+            if (left->get_value() == "true") _bool = "1";
+            std::stringstream _r(_bool);
+            _l >> first;
+            _r >> second;
+            return new MemObject(OBJECT_NUMBER, "", std::to_string(first - second));
+        }
+
+        else {
+            return new MemObject(OBJECT_NULL, "", "null");
+        }
     };
 
     MemObject* Equals::eval(MemoryKernel& mem) {
@@ -206,7 +453,7 @@ namespace AST {
 
         // bool and bool
         if (left->get_type() == OBJECT_BOOL && left->get_type() == OBJECT_BOOL) {
-            return left->multiplyBy(right);
+            return (new Times(left_, right_))->eval(mem);
         }
         // TODO:  Add number support 
         else {
@@ -220,7 +467,7 @@ namespace AST {
 
         // bool and bool
         if (left->get_type() == OBJECT_BOOL && left->get_type() == OBJECT_BOOL) {
-            return left->add(right);
+            return (new Plus(left_, right_))->eval(mem);
         }
         // TODO:  Add number support 
         else {
@@ -240,7 +487,12 @@ namespace AST {
         }
         // числа
         if (left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_NUMBER) {
-            if (left->subtract(right) < 0) {
+            MemObject* _subtract = (new Minus(left_, right_))->eval(mem);
+
+            double _sub_value;
+            std::stringstream _l(_subtract->get_value());
+            _l >> _sub_value;
+            if (_sub_value < 0) {
                 return new MemObject(OBJECT_BOOL, "", "true");
             }
         }
@@ -252,10 +504,10 @@ namespace AST {
         MemObject* left = left_.eval(mem);
         MemObject* right = right_.eval(mem);
 
-        MemObject* _less = (new Less(left_, right_))->eval(mem);
-        MemObject* _equals = (new Equals(left_, right_))->eval(mem);
+        Less _less = Less(left_, right_);
+        Equals _equals = Equals(left_, right_);
 
-        return _less->add(_equals);
+        return (new Plus(_less, _equals))->eval(mem);
     }
 
     MemObject* Greater::eval(MemoryKernel& mem) {
@@ -270,7 +522,12 @@ namespace AST {
         }
         // числа
         if (left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_NUMBER) {
-            if (left->subtract(right) > 0) {
+            MemObject* _subtract = (new Minus(left_, right_))->eval(mem);
+
+            double _sub_value;
+            std::stringstream _l(_subtract->get_value());
+            _l >> _sub_value;
+            if (_sub_value > 0) {
                 return new MemObject(OBJECT_BOOL, "", "true");
             }
         }
@@ -282,10 +539,10 @@ namespace AST {
         MemObject* left = left_.eval(mem);
         MemObject* right = right_.eval(mem);
 
-        MemObject* _greater = (new Greater(left_, right_))->eval(mem);
-        MemObject* _equals = (new Equals(left_, right_))->eval(mem);
+        Greater _greater = Greater(left_, right_);
+        Equals _equals = Equals(left_, right_);
 
-        return _greater->add(_equals);
+        return (new Plus(_greater, _equals))->eval(mem);
     }
 
 
