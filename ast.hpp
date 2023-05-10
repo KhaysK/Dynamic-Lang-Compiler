@@ -475,42 +475,7 @@ namespace AST {
         explicit While(ASTNode &cond, Block &body) :
             while_cond{cond}, while_block{body} {};
         void json(std::ostream& out, AST_print_context& mem) override;
-        /*
-        std::string eval(MemoryKernel& mem) override{
-            while (true)
-            {
-                if(dynamic_cast<BoolConst*>(&while_cond)){
-
-                    if (while_cond.eval(mem) == "false")
-                        break;
-
-                }else if(dynamic_cast<NumberConst*>(&while_cond)){
-
-                    if (while_cond.eval(mem) == "0")
-                        break;
-
-                }else if(dynamic_cast<NullConst*>(&while_cond)){
-
-                    break;
-
-                }else if(dynamic_cast<Ident*>(&while_cond)){
-
-                    Ident* cond = dynamic_cast<Ident*>(&while_cond);
-                    if(cond->get_type() == "Bool"){
-                        if (while_cond.eval(mem) == "false")
-                            break;
-                    }else if (cond->get_type() == "Number"){
-                        if (while_cond.eval(mem) == "0")
-                            break;
-                    }else if (cond->get_type() == "Null"){
-                        break;
-                    }
-                } else if (while_cond.eval(mem) == "false") break;
-                while_block.eval(mem);
-            }
-
-            return "";
-        }; */
+        MemObject* eval(MemoryKernel& mem) override;
     };
 
     /**

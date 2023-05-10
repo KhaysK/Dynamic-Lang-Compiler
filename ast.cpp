@@ -549,6 +549,19 @@ namespace AST {
         return (new Plus(_greater, _equals))->eval(mem);
     }
 
+    MemObject* While::eval(MemoryKernel& mem) {
+        while (true) {
+            MemObject* res = while_cond.eval(mem);
+
+            if (res->get_type() == OBJECT_BOOL && res->get_value() == "false") break;
+            else if (res->get_type() == OBJECT_NUMBER && res->get_value() == "0") break;
+            else if (res->get_type() == OBJECT_NULL) break;
+            else while_block.eval(mem); 
+        }
+        return new MemObject(OBJECT_NULL, "", "null");
+        
+    }
+
 
     void ASTNode::json_indent(std::ostream& out, AST_print_context& ctx) {
         if (ctx.indent_ > 0) {
