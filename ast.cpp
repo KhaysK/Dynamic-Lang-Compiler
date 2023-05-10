@@ -49,9 +49,11 @@ namespace AST {
                 
                 FuncDecl *fd = dynamic_cast<FuncDecl*>(&value);
                 std::vector<std::string> args;
-                for (auto p: fd->params)
-                    args.push_back(dynamic_cast<Ident*>(p)->eval(mem)->get_name());
-                
+                for (auto p: fd->params) {
+                    // args.push_back(dynamic_cast<Ident*>(p)->eval(mem)->get_name());
+                    args.push_back(p->eval(mem)->get_value());
+                }
+
                 MemFunction *func = new MemFunction(name, &fd->funcBody, args);
                 mem.put_object(func);
             } else{
@@ -64,7 +66,7 @@ namespace AST {
                 FuncDecl *fd = dynamic_cast<FuncDecl*>(&value);
                 std::vector<std::string> args;
                 for (auto p: fd->params)
-                    args.push_back(dynamic_cast<Ident*>(p)->eval(mem)->get_name());
+                    args.push_back(p->eval(mem)->get_value());
                 
                 MemFunction *func = new MemFunction(name, &fd->funcBody, args);
                 mem.put_object(func);
@@ -421,11 +423,22 @@ namespace AST {
         MemObject* left = left_.eval(mem);
         MemObject* right = right_.eval(mem);
 
-        if (left->get_value() == right->get_value()) {
-            return new MemObject(OBJECT_BOOL, "", "true");
+        bool eq = false;
+
+        if (left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_NUMBER){
+            double _left, _right;
+            std::stringstream _l, _r;
+            _l << left->get_value();
+            _r << right->get_value();
+
+            _l >> _left;
+            _r >> _right;
+            eq = (_left == _right);
+        } else if (left->get_value() == right->get_value()) {
+            eq = true;
         }
 
-        return new MemObject(OBJECT_BOOL, "", "false");
+        return new MemObject(OBJECT_BOOL, "", eq ? "true": "false");
     }
 
     MemObject* Not::eval(MemoryKernel& mem) {
@@ -556,12 +569,47 @@ namespace AST {
             if (res->get_type() == OBJECT_BOOL && res->get_value() == "false") break;
             else if (res->get_type() == OBJECT_NUMBER && res->get_value() == "0") break;
             else if (res->get_type() == OBJECT_NULL) break;
-            else while_block.eval(mem); 
+            while_block.eval(mem); 
         }
         return new MemObject(OBJECT_NULL, "", "null");
         
     }
 
+    MemObject* FuncCall::eval(MemoryKernel& mem) {
+        
+        MemObject *obj = ident.eval(mem);
+        MemFunction *func = dynamic_cast<MemFunction*>(obj);
+
+        mem.enter_scope();
+        mem.mark_inside_func();
+
+        std::vector<MemObject*> to_call;
+        std::vector<std::string> arg_names = func->get_arg_names();
+
+        // This should be modified when arrays are implemented
+        if (params.size() != arg_names.size()) {
+            std::cout << func->get_name() << ": Invalid arguments. Aborting.\n";
+            exit(1);
+        }
+
+        for (int i = 0; i < params.size(); ++i) {
+            ASTNode *node = params[i];
+            MemObject* eval_res = node->eval(mem);
+            to_call.push_back(new MemObject(eval_res->get_type(), arg_names[i], eval_res->get_value()));
+        }
+
+        if (!func->prep_mem(mem, to_call)) {
+            std::cout << func->get_name() << ": Invalid arguments. Aborting.\n";
+            exit(1);
+        }
+
+        static_cast<Block*>(func->get_entry_point())->eval(mem);
+        mem.exit_scope();
+        mem.unmark_inside_func();
+
+        return new MemObject(OBJECT_NULL, "", "null");
+
+    }
 
     void ASTNode::json_indent(std::ostream& out, AST_print_context& ctx) {
         if (ctx.indent_ > 0) {

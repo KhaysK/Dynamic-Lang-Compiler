@@ -528,7 +528,6 @@ namespace AST {
      * 
      * params: вектор переменных (Ident)
      * funcBlock: блок функции
-     * expr: выражение, которое вернет функция (return)
      * 
      * flat: как обычно, ничего не поменялось, не используем Block в чистом виде
     */
@@ -573,47 +572,7 @@ namespace AST {
             }
         }
         void json(std::ostream& out, AST_print_context& mem) override;
-        /*
-        std::string eval(MemoryKernel &mem) override {
-
-            MemObject *obj = mem.get_object(dynamic_cast<Ident*>(&ident)->get_name());
-            MemFunction *func = dynamic_cast<MemFunction*>(obj);
-
-            mem.enter_scope();
-            mem.mark_inside_func();
-
-            std::vector<MemObject*> to_call;
-            std::vector<std::string> arg_names = func->get_arg_names();
-
-            // This should be modified when arrays are implemented
-            if (params.size() != arg_names.size()) {
-                std::cout << func->get_name() << ": Invalid arguments. Aborting.\n";
-                exit(1);
-            }
-
-            for (int i = 0; i < params.size(); ++i) {
-                ASTNode *node = params[i];
-                if (dynamic_cast<NumberConst*>(node)) {
-                    to_call.push_back(new MemObject(OBJECT_NUMBER, arg_names[i], node->eval(mem)));
-                } else if (dynamic_cast<Ident*>(node)) {
-                    MemObject* obj = mem.get_object(dynamic_cast<Ident*>(node)->get_name());
-                    to_call.push_back(new MemObject(obj->get_type(), arg_names[i], obj->get_value()));
-                } else {
-                    to_call.push_back(new MemObject(OBJECT_NUMBER, arg_names[i], node->eval(mem)));
-                }
-            }
-            
-            if (!func->prep_mem(mem, to_call)) {
-                std::cout << func->get_name() << ": Invalid arguments. Aborting.\n";
-                exit(1);
-            }
-
-            static_cast<Block*>(func->get_entry_point())->eval(mem);
-            mem.exit_scope();
-            mem.unmark_inside_func();
-
-            return "";
-        } */
+        MemObject* eval(MemoryKernel& mem) override;
     };
 
 

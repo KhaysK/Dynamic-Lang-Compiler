@@ -370,14 +370,14 @@ function_call
 
 function_params
 	: function_params COMMA IDENTIFIER {
-		AST::Ident* ident = new AST::Ident($3);
-		$1->append(ident);
+		AST::StringConst* name = new AST::StringConst($3);
+		$1->append(name);
 		$$ = $1;
 	}
 	| IDENTIFIER {
 		$$ = new AST::Block();
-		AST::Ident* ident = new AST::Ident($1);
-		$$->append(ident);
+		AST::StringConst* name = new AST::StringConst($1);
+		$$->append(name);
 	}
 	;
 

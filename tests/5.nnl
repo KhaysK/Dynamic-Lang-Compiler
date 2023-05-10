@@ -1,28 +1,33 @@
 # functions are objects too
 
 const g = func(a, b) do
-	print a + b;
-	return 0;
+  print a + b;
+  return 0;
+end
+
+const print_tree = func(n) do
+  var s = "", i = 0;
+  while i <= n
+    loop
+      s = s + "*";
+      i = i + 1;
+    end
+  print s;
+  return 0;
 end
 
 const f = func(a) do
-	if a <= 0
-	then
-		print "*";
-	else
-		var s = "", i = 0;
-		while i <= a
-		loop
-			s = s + "*";
-			i = i + 1;
-		end
-		print s;
-		a = a - 1;
-		f(a);
-	end
-	return 0;
+  if a <= 0
+  then
+    print "*";
+  else
+    print_tree(a);
+    f(a - 1);
+    print_tree(a);
+  end
+  return 0;
 end
 
 
 g(15, 23);
-f(6); # 30
+f(6);
