@@ -281,9 +281,8 @@ factor
 		AST::NumberConst* idx = new AST::NumberConst($3);
 		$$ = new AST::ArrayEl(*ident, *idx);
 	 }
-	| IDENTIFIER IS assignment_type {
-		AST::Ident* lhs = new AST::Ident($1);
-		$$ = new AST::IsOp(*lhs, *$3);
+	| expression IS assignment_type {
+		$$ = new AST::IsOp(*$1, *$3);
 	 }
 	;
 

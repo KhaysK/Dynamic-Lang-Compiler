@@ -120,7 +120,7 @@ namespace AST {
         if(type.eval(mem)->get_type() == OBJECT_NUMBER)
             t = OBJECT_NUMBER;
 
-        input_obj = new MemObject(t, "", input);
+        input_obj = new MemObject(t, name, input);
         mem.put_object(input_obj);
         
         return input_obj;
@@ -166,7 +166,7 @@ namespace AST {
             if (left->get_value() == "true" || right->get_value() == "true") {
                 return new MemObject(OBJECT_BOOL, "", "true");
             }
-            return new MemObject(OBJECT_NUMBER, "", "false");
+            return new MemObject(OBJECT_BOOL, "", "false");
         }
 
         // null + null = null
@@ -490,7 +490,7 @@ namespace AST {
             }
         }
         // числа
-        if (left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_NUMBER) {
+        else if (left->get_type() == OBJECT_NUMBER && right->get_type() == OBJECT_NUMBER) {
             MemObject* _subtract = (new Minus(left_, right_))->eval(mem);
 
             double _sub_value;
