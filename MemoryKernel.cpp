@@ -141,11 +141,15 @@ bool MemFunction::prep_mem(MemoryKernel &mem, std::vector<MemObject *> args) {
  **************************************************/
 
 bool MemoryKernel::put_primary_element(MemObject *obj) {
-  MemObject *_obj = get_object(obj->get_name());
-
-  if (_obj) {
-    *_obj = *obj;
-    return false;
+  for (int k = this->scopes.size() - 1; k >= 0; --k) {
+    auto &scope = scopes[k];
+    for (int i = scope.size() - 1; i >= 0; --i) {
+      if (scope[i]->get_name() == obj->get_name()) {
+        delete scope[i];
+        scope[i] = obj;
+        return false;
+      }
+    }
   }
 
   scopes[scopes.size() - 1].push_back(obj);
@@ -237,7 +241,8 @@ void MemoryKernel::dump_mem() const {
   for (auto &scope : this->scopes) {
     for (MemObject *obj : scope) {
       for (int i = 0; i < depth; ++i) std::cout << "  ";
-      std::cout << obj->get_name() << " = " << obj->get_value() << "\n";
+      std::cout << ObjectTypeStr(obj->get_type()) << " " << obj->get_name()
+                << " = " << obj->get_value() << "\n";
     }
     ++depth;
   }

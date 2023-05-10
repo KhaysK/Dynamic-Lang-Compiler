@@ -19,9 +19,19 @@ enum ObjectType : int {
   OBJECT_STRING = 0,
   OBJECT_NUMBER,
   OBJECT_BOOL,
-  OBJECT_NULL,
   OBJECT_FUNC,
+  OBJECT_NULL,
 };
+
+inline std::string ObjectTypeStr(ObjectType type) {
+  static std::vector<std::string> types = {
+    "string", "number", "bool", "func",
+  };
+
+  if (type < 0 || type >= types.size())
+    return "undefined";
+  return types[type];
+}
 
 /**
  * @brief Objects that are stored in MemoryKernel
