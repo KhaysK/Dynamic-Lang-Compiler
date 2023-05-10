@@ -595,7 +595,8 @@ int main(int argc, char *argv[]) {
     while (getline(file, line)) {
         input += line + '\n';
     }
-
+    input = "var _G;\n" + input;
+    
     cout << input << '\n';
 
     file.close();
