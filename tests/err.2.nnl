@@ -1,0 +1,5 @@
+# panic on change of non existent variable
+
+var x = 10;
+const y = 20;
+z = 33; # will panic

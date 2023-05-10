@@ -39,43 +39,26 @@ namespace AST {
     }
 
     MemObject* Assign::eval(MemoryKernel& mem){
-        if(mod.getMod() != "assign"){
-            
-            if (dynamic_cast<FuncDecl*>(&value)) {
-                if (mem.is_inside_func()){
-                    std::cout << "Can not declare function inside function\n";
-                    exit(1);
-                }
-                
-                FuncDecl *fd = dynamic_cast<FuncDecl*>(&value);
-                std::vector<std::string> args;
-                for (auto p: fd->params) {
-                    // args.push_back(dynamic_cast<Ident*>(p)->eval(mem)->get_name());
-                    args.push_back(p->eval(mem)->get_value());
-                }
-
-                MemFunction *func = new MemFunction(name, &fd->funcBody, args);
-                mem.put_object(func);
-            } else{
-                MemObject* assign_value = value.eval(mem);
-                mem.put_object(new MemObject(assign_value->get_type(), name, assign_value->get_value()));
-            }
-        }else{
-
-            if (dynamic_cast<FuncDecl*>(&value)) {
-                FuncDecl *fd = dynamic_cast<FuncDecl*>(&value);
-                std::vector<std::string> args;
-                for (auto p: fd->params)
-                    args.push_back(p->eval(mem)->get_value());
-                
-                MemFunction *func = new MemFunction(name, &fd->funcBody, args);
-                mem.put_object(func);
-            } else {
-                MemObject* assign_value = value.eval(mem);
-                mem.get_object(name)->set_value(assign_value->get_value());
-                mem.get_object(name)->set_type(assign_value->get_type());
-            }
+        // if we try to change object which does not exist,
+        // then panic and exit
+        if (mod.getMod() == "assign" && !mem.get_object(this->name)) {
+            std::cout << "Invalid reference to '" << this->name
+                      << "': variable does not exist\n";
+            exit(1);
         }
+
+        MemObject* _eval = value.eval(mem);
+        
+        if (_eval->get_type() != OBJECT_FUNC) {
+            mem.put_object(new MemObject(_eval->get_type(), this->name, _eval->get_value()));
+        } else {
+            MemFunction *_eval_f = dynamic_cast<MemFunction*>(_eval);
+            MemFunction *to_put_f = new MemFunction(this->name,
+                                                    _eval_f->get_entry_point(),
+                                                    _eval_f->get_arg_names());
+            mem.put_object(to_put_f);
+        }
+
         return new MemObject(OBJECT_NULL, "", "null");
     }
 
@@ -575,11 +558,25 @@ namespace AST {
         
     }
 
+    MemObject* FuncDecl::eval(MemoryKernel& mem) {
+        if (mem.is_inside_func()){
+            std::cout << "Can not declare function inside function\n";
+            exit(1);
+        }
+        
+        std::vector<std::string> args;
+        for (auto p: this->params)
+            args.push_back(p->eval(mem)->get_value());
+        
+        return new MemFunction("", &this->funcBody, args);
+    }
+
     MemObject* FuncCall::eval(MemoryKernel& mem) {
         
         MemObject *obj = ident.eval(mem);
         MemFunction *func = dynamic_cast<MemFunction*>(obj);
 
+        // mem.dump_mem();
         mem.enter_scope();
         mem.mark_inside_func();
 

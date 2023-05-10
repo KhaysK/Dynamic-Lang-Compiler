@@ -544,6 +544,7 @@ namespace AST {
             }
         }
         void json(std::ostream& out, AST_print_context& mem) override;
+        MemObject* eval(MemoryKernel& mem) override;
     };
 
     class Return: public ASTNode {

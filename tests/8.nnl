@@ -1,0 +1,21 @@
+const x = func(a, b) do
+    print a + b;
+end
+
+const y = func(a, b) do
+    print a - b;
+end
+
+var a, b, z;
+
+readInt a;
+readInt b;
+
+if a <= b
+then
+    z = x;
+else
+    z = y;
+end
+
+z(a, b);

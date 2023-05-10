@@ -1,15 +1,14 @@
-const f = func() do
+const f = func(_) do
     var x = 0;
 
-    var y = func() do
-        x = x + 1
-        return x
+    # should not be able to initialize function
+    # inside function
+    var y = func(_) do
+        x = x + 1;
     end
-
-    return y
 end
 
-var d = f()
+var d = f(0);
 
-print d()
-print d()
+print d(0);
+print d(0);
