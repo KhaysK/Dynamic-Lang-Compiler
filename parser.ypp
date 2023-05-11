@@ -87,7 +87,7 @@
 %token XOR
 
 // AST Nodes
-%type <AST::Block*> func_block block if_alternatives list_assignemtns assignment function_params function_call_params
+%type <AST::Block*> block if_alternatives list_assignemtns assignment function_params function_call_params
 %type <AST::ASTNode*> program statement operation operation_op
 %type <AST::ASTNode*> if_statement loop_statement function_call for_expression function_declaration
 %type <AST::ASTNode*> expression term factor assignment_value assignment_part assignment_type tuple_element
@@ -108,29 +108,6 @@ program
 	;
 
 block
-	: statement {
-		$$ = new AST::Block();
-		if (dynamic_cast<AST::Block*>($1)) {
-			AST::Block* list = dynamic_cast<AST::Block*>($1);
-			$$->flat(list);
-		} else {
-			$$->append($1);
-		}
-	}
-	| operation { $$ = new AST::Block(); $$->append($1); }
-	| block statement {
-		if (dynamic_cast<AST::Block*>($2)) {
-			AST::Block* list = dynamic_cast<AST::Block*>($2);
-			$1->flat(list);
-		} else {
-			$1->append($2);
-		}
-		$$ = $1;
-	}
-	| block operation { $1->append($2); $$ = $1; }
-	;
-
-func_block
 	: statement {
 		$$ = new AST::Block();
 		if (dynamic_cast<AST::Block*>($1)) {
@@ -352,7 +329,7 @@ for_expression
 	;
 
 function_declaration
-	: FUNC LPAREN function_params RPAREN DO func_block END { 
+	: FUNC LPAREN function_params RPAREN DO block END { 
 		AST::FuncDecl* decl = new AST::FuncDecl(*$6);
 		decl->flat($3);
 		$$ = decl;
