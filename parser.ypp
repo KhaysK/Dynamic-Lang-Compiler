@@ -89,7 +89,7 @@
 // AST Nodes
 %type <AST::Block*> block if_alternatives list_assignemtns assignment function_params function_call_params
 %type <AST::ASTNode*> program statement operation operation_op
-%type <AST::ASTNode*> if_statement loop_statement function_call for_expression function_declaration
+%type <AST::ASTNode*> if_statement loop_statement function_call function_declaration
 %type <AST::ASTNode*> expression term factor assignment_value assignment_part assignment_type tuple_element
 %type <AST::ASTNode*> conditional_expression
 %type <AST::ASTNode*> read_keyword return
@@ -137,7 +137,7 @@ block
 	;
 
 return
-	: RETURN expression SEMICOLON {
+	: RETURN conditional_expression SEMICOLON {
 		$$ = new AST::Return(*$2);
 	}
 	;
@@ -179,7 +179,7 @@ assignment_part
 		AST::AssignMod* mod = new AST::AssignMod("assign");
 		$$ = new AST::Assign(*mod, $1, *rhs);
 	 }
-	| IDENTIFIER ASSIGN expression {
+	| IDENTIFIER ASSIGN conditional_expression {
 		AST::ASTNode* rhs = $3;
 		AST::AssignMod* mod = new AST::AssignMod("assign");
 		$$ = new AST::Assign(*mod, $1, *rhs);
@@ -189,17 +189,14 @@ assignment_part
 		AST::AssignMod* mod = new AST::AssignMod("assign");
 		$$ = new AST::Assign(*mod, $1, *rhs);
 	}
-	| IDENTIFIER LBRACKET NUMBER RBRACKET ASSIGN expression {
+	| IDENTIFIER LBRACKET NUMBER RBRACKET ASSIGN conditional_expression {
 		AST::AssignMod* mod = new AST::AssignMod("assign");
 		$$ = new AST::Assign(*mod, $1 + "@" + $3,*$6);
 	}
 	;
 
 assignment_value
-	: LBRACKET RBRACKET { 
-		$$ = new AST::ArrayDecl();
-	 }
-	| LBRACKET function_call_params RBRACKET {
+	: LBRACKET function_call_params RBRACKET {
 		AST::ArrayDecl* decl = new AST::ArrayDecl();
 		decl->flat($2);
 		$$ = decl;
@@ -230,7 +227,9 @@ expression
 	: term { $$ = $1; }
 	| expression PLUS term { $$ = new AST::Plus(*$1, *$3); }
 	| expression MINUS term { $$ = new AST::Minus(*$1, *$3); }
-	| LPAREN expression RPAREN { $$ = $2; }
+	| expression IS assignment_type {
+		$$ = new AST::IsOp(*$1, *$3);
+	}
 	;
 
 term
@@ -256,22 +255,20 @@ factor
 		AST::NumberConst* idx = new AST::NumberConst($3);
 		$$ = new AST::ArrayEl(*ident, *idx);
 	 }
-	| expression IS assignment_type {
-		$$ = new AST::IsOp(*$1, *$3);
-	 }
+	| LPAREN conditional_expression RPAREN { $$ = $2; }
 	;
 
 
 operation
-	: PRINT expression SEMICOLON { $$ = new AST::Print(*$2); }
+	: PRINT conditional_expression SEMICOLON { $$ = new AST::Print(*$2); }
 	| read_keyword IDENTIFIER SEMICOLON { 
 		$$ = new AST::Read(*$1, $2); 
 	 }
-	| IDENTIFIER operation_op ASSIGN expression SEMICOLON {
+	| IDENTIFIER operation_op ASSIGN conditional_expression SEMICOLON {
 		AST::Ident* ident = new AST::Ident($1); 
 		$$ = new AST::CompExp(*ident, *$2, *$4); 
 	 }
-	| tuple_element operation_op ASSIGN expression SEMICOLON {
+	| tuple_element operation_op ASSIGN conditional_expression SEMICOLON {
 		$$ = new AST::CompExp(*$1, *$2, *$4); 	
 	}
 	;
@@ -314,18 +311,6 @@ if_alternatives
 
 loop_statement
 	: WHILE_L conditional_expression LOOP block END { $$ = new AST::While(*$2, *$4); }
-	| FOR_L assignment conditional_expression SEMICOLON for_expression LOOP block END {
-		AST::For* fr = new AST::For(*$3, *$5, *$7);
-		fr->flat($2);
-		$$ = fr;
-	 }
-	;
-
-for_expression
-	: IDENTIFIER operation_op ASSIGN expression {
-		AST::Ident* ident = new AST::Ident($1);
-		$$ = new AST::CompExp(*ident, *$2, *$4);
-	}
 	;
 
 function_declaration
@@ -360,11 +345,11 @@ function_params
 	;
 
 function_call_params
-	: function_call_params COMMA expression {
+	: function_call_params COMMA conditional_expression {
 		$1->append($3);
 		$$ = $1;
 	}
-	| expression {
+	| conditional_expression {
 		$$ = new AST::Block();
 		$$->append($1);
 	}
