@@ -176,6 +176,12 @@ namespace AST {
         void set(AssignMod& mod_) {
             mod.setMod(mod_.getMod());
         }
+        void setName(std::string new_name){
+            name = new_name;
+        }
+        std::string getName(){
+           return name;
+        }
         void json(std::ostream& out, AST_print_context& mem) override;
         MemObject* eval(MemoryKernel& mem) override;
     };
@@ -624,7 +630,7 @@ namespace AST {
     public:
         TupleEl(ASTNode &l, ASTNode &r) :
                 BinOp(std::string("TuplElem"),  l, r) {};
-        // MemObject* eval(MemoryKernel& mem) override;
+        MemObject* eval(MemoryKernel& mem) override;
     };
 
     /**
@@ -642,7 +648,7 @@ namespace AST {
             }
         }
         void json(std::ostream& out, AST_print_context& mem) override; 
-        // MemObject* eval(MemoryKernel& mem) override;
+        MemObject* eval(MemoryKernel& mem) override;
     };
 }
 #endif /* AST_HPP */

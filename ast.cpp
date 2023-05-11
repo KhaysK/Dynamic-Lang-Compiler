@@ -50,13 +50,19 @@ namespace AST {
         MemObject* _eval = value.eval(mem);
 
         if(_eval->get_type() == OBJECT_ARRAY){
+
+            std::vector<MemObject *> elements = mem.extract_array("arr"); 
             for (int i = 0; i < std::stoi(_eval->get_value()); i++)
             {
-                std::string name = "$arr@" + std::to_string(i);
-                MemObject* item = mem.get_object(name);
-                std::string new_name = this->name + "@" + std::to_string(i);
-                mem.put_object(new MemObject(item->get_type(), new_name, item->get_value()));
-                mem.drop_object(name);
+                std::string old_name = elements[i]->get_name();
+                std::string global_arr = "arr@";
+                size_t pos = old_name.find(global_arr);
+                if (pos != std::string::npos) {
+                    old_name.replace(pos, global_arr.length(), "");
+                }
+                std::string new_name = this->name + "@" + old_name;
+                mem.put_object(new MemObject(elements[i]->get_type(), new_name, elements[i]->get_value()));
+                mem.drop_object(elements[i]->get_name());
             }
             mem.put_object(new MemObject(_eval->get_type(), this->name, _eval->get_value()));
         }
@@ -655,11 +661,6 @@ namespace AST {
 
     MemObject* ArrayEl::eval(MemoryKernel& mem){
         std::string name = left_.eval(mem)->get_name() + "@" + right_.eval(mem)->get_value();
-        MemObject* arr = mem.get_object(left_.eval(mem)->get_name());
-        if(std::stoi(left_.eval(mem)->get_value()) > std::stoi(arr->get_value())){
-            arr->set_value(left_.eval(mem)->get_value());
-            mem.put_object(arr);
-        }
             
         return mem.get_object(name);
     }
@@ -668,26 +669,27 @@ namespace AST {
         for (int i = 0; i < params.size(); i++)
         {
             MemObject* item = params[i]->eval(mem);
-            std::string name = "$arr@" + std::to_string(i);
+            std::string name = "arr@" + std::to_string(i);
             mem.put_object(new MemObject(item->get_type(), name, item->get_value()));
         }
         return new MemObject(OBJECT_ARRAY, "", std::to_string(params.size()));
     }
 
-    // MemObject* TupleEl::eval(MemoryKernel& mem){
-    //     std::string name = left_.eval(mem)->get_name() + "@" + left_.eval(mem)->get_value();
-    //     return mem.get_object(name);
-    // }
+    MemObject* TupleEl::eval(MemoryKernel& mem){
+        std::string name = left_.eval(mem)->get_value() + "@" + right_.eval(mem)->get_value();
+        
+        return mem.get_object(name);
+    }
 
-    // MemObject* TupleDecl::eval(MemoryKernel& mem){
-    //     for (int i = 0; i < params.size(); i++)
-    //     {
-    //         MemObject* item = params[i]->eval(mem);
-    //         std::string name = "$arr@" + std::to_string(i);
-    //         mem.put_object(new MemObject(item->get_type(), name, item->get_value()));
-    //     }
-    //     return new MemObject(OBJECT_ARRAY, "", std::to_string(params.size()));
-    // }
+    MemObject* TupleDecl::eval(MemoryKernel& mem){
+        for (int i = 0; i < params.size(); i++)
+        {
+            Assign* tupleElem = dynamic_cast<Assign*>(params[i]);
+            tupleElem->setName("arr@" + tupleElem->getName());
+            params[i]->eval(mem);
+        }
+        return new MemObject(OBJECT_ARRAY, "", std::to_string(params.size()));
+    }
 
     void ASTNode::json_indent(std::ostream& out, AST_print_context& ctx) {
         if (ctx.indent_ > 0) {
