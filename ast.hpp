@@ -553,6 +553,7 @@ namespace AST {
         explicit Return(ASTNode &func_expr) :
             expr{func_expr} {};
         void json(std::ostream& out, AST_print_context& mem) override;
+        MemObject* eval(MemoryKernel& mem) override;
     };
 
     /**

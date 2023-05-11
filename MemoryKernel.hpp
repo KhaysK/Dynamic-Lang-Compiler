@@ -180,6 +180,15 @@ class MemoryKernel {
   bool put_object(MemObject *obj);
 
   /**
+   * @brief Put object to global scope
+   * 
+   * @param obj Object itself
+   * @return true if object did not exist before
+   * @return false if object existed before
+   */
+  bool put_global(MemObject *obj);
+
+  /**
    * @brief Manually delete object from memory
    *        (May be useful on inline array redefinition)
    *

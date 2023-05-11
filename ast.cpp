@@ -77,8 +77,13 @@ namespace AST {
         mem.enter_scope();
         for(ASTNode* node: nodes){
             node->eval(mem);
-            // mem.dump_mem();
         }
+
+#ifdef DEBUG
+        std::cout << "Dump memory at block end:\n";
+        mem.dump_mem();
+#endif /* DEBUG */
+
         mem.exit_scope();
         return new MemObject(OBJECT_NULL, "", "null");
     }
@@ -622,11 +627,18 @@ namespace AST {
         }
 
         static_cast<Block*>(func->get_entry_point())->eval(mem);
+        MemObject *ret = mem.get_object("$ret");
         mem.exit_scope();
         mem.unmark_inside_func();
 
-        return new MemObject(OBJECT_NULL, "", "null");
+        return ret;
 
+    }
+
+    MemObject* Return::eval(MemoryKernel& mem) {
+        MemObject *_eval = this->expr.eval(mem);
+        mem.put_global(new MemObject(_eval->get_type(), "$ret", _eval->get_value()));
+        return new MemObject(OBJECT_NULL, "", "null");
     }
 
     MemObject* ArrayEl::eval(MemoryKernel& mem){

@@ -1,0 +1,12 @@
+#!name Return value from function
+
+const f = func(a, b) do
+    return a + b;
+end
+
+const x = f(10, 20);
+const y = f(30, 40);
+const z = f(x, y);
+
+#!expect 100.000000
+print z;

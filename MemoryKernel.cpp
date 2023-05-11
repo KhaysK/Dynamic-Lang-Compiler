@@ -212,6 +212,22 @@ bool MemoryKernel::put_object(MemObject *obj) {
     return MemoryKernel::put_primary_element(obj);
 }
 
+bool MemoryKernel::put_global(MemObject *obj) {
+  if (scopes.size() < 1) return false;
+
+  auto &scope = scopes[0];
+  for (int i = scope.size() - 1; i >= 0; --i) {
+    if (scope[i]->get_name() == obj->get_name()) {
+      delete scope[i];
+      scope[i] = obj;
+      return false;
+    }
+  }
+
+  scope.push_back(obj);
+  return true;
+}
+
 bool MemoryKernel::drop_object(std::string name) {
   MemObject *obj = get_object(name);
   if (!obj) return false;
