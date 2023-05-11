@@ -654,8 +654,7 @@ namespace AST {
     }
 
     MemObject* ArrayEl::eval(MemoryKernel& mem){
-        std::string name = left_.eval(mem)->get_name() + "@" + left_.eval(mem)->get_value();
-        
+        std::string name = left_.eval(mem)->get_name() + "@" + right_.eval(mem)->get_value();
         MemObject* arr = mem.get_object(left_.eval(mem)->get_name());
         if(std::stoi(left_.eval(mem)->get_value()) > std::stoi(arr->get_value())){
             arr->set_value(left_.eval(mem)->get_value());

@@ -156,12 +156,22 @@ bool MemoryKernel::put_array_element(MemObject *obj) {
   std::string arr_name = extract_array_name(obj->get_name());
   for (int k = this->scopes.size() - 1; k >= 0; --k) {
     auto &scope = scopes[k];
+    bool isValidScope = false;
     for (int i = scope.size() - 1; i >= 0; --i) {
-      if (is_array_element(scope[i]->get_name()) &&
+      if (!isValidScope && is_array_element(scope[i]->get_name()) &&
           extract_array_name(scope[i]->get_name()) == arr_name) {
-        scope.push_back(obj);
-        return false;
+        isValidScope = true;
       }
+
+      if (scope[i]->get_name() == obj->get_name() && isValidScope) {
+        delete scope[i];
+        scope[i] = obj;
+        return false;
+      }  
+    }
+    if(isValidScope){
+      scope.push_back(obj);
+      return true;
     }
   }
 

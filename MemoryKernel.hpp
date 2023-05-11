@@ -20,13 +20,13 @@ enum ObjectType : int {
   OBJECT_NUMBER,
   OBJECT_BOOL,
   OBJECT_FUNC,
-  OBJECT_NULL,
   OBJECT_ARRAY,
+  OBJECT_NULL,
 };
 
 inline std::string ObjectTypeStr(ObjectType type) {
   static std::vector<std::string> types = {
-    "string", "number", "bool", "func",
+    "string", "number", "bool", "func", "array",
   };
 
   if (type < 0 || type >= types.size())
