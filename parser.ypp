@@ -213,10 +213,8 @@ assignment_part
 		$$ = new AST::Assign(*mod, $1, *rhs);
 	}
 	| IDENTIFIER LBRACKET NUMBER RBRACKET ASSIGN expression {
-		AST::Ident* ident = new AST::Ident($1); 
-		AST::NumberConst* idx = new AST::NumberConst($3);
 		AST::AssignMod* mod = new AST::AssignMod("assign");
-		$$ = new AST::Assign(*mod, $1,*$6);
+		$$ = new AST::Assign(*mod, $1 + "@" + $3,*$6);
 	}
 	;
 
