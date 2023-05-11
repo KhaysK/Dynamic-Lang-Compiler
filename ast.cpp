@@ -621,7 +621,14 @@ namespace AST {
         for (int i = 0; i < params.size(); ++i) {
             ASTNode *node = params[i];
             MemObject* eval_res = node->eval(mem);
-            to_call.push_back(new MemObject(eval_res->get_type(), arg_names[i], eval_res->get_value()));
+
+            MemFunction *eval_res_f = dynamic_cast<MemFunction*>(eval_res);
+            if (eval_res_f) {
+                MemFunction *func_copy = new MemFunction(arg_names[i], eval_res_f->get_entry_point(), eval_res_f->get_arg_names());
+                to_call.push_back(func_copy);
+            } else {
+                to_call.push_back(new MemObject(eval_res->get_type(), arg_names[i], eval_res->get_value()));
+            }
         }
 
         if (!func->prep_mem(mem, to_call)) {

@@ -1,0 +1,19 @@
+#!name Pass function as argument
+
+const caller = func(x) do
+    return x(10);
+end
+
+const twice = func(n) do
+    return n * 2;
+end
+
+const square = func(n) do
+    return n * n;
+end
+
+#!expect 20.000000
+print caller(twice);
+
+#!expect 100.000000
+print caller(square);
