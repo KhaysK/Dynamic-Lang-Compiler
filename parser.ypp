@@ -377,6 +377,9 @@ function_params
 		AST::StringConst* name = new AST::StringConst($1);
 		$$->append(name);
 	}
+	| %empty {
+		$$ = new AST::Block();
+	}
 	;
 
 function_call_params
@@ -387,6 +390,9 @@ function_call_params
 	| expression {
 		$$ = new AST::Block();
 		$$->append($1);
+	}
+	| %empty {
+		$$ = new AST::Block();
 	}
 	;
 
