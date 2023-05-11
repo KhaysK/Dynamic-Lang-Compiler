@@ -1,3 +1,5 @@
+#!name While loop test
+
 # while loops
 var t = 0;
 while t <= 10
@@ -5,3 +7,15 @@ loop
 	print t * t;
 	t = t + 1;
 end
+
+#!expect 0.000000
+#!expect 1.000000
+#!expect 4.000000
+#!expect 9.000000
+#!expect 16.000000
+#!expect 25.000000
+#!expect 36.000000
+#!expect 49.000000
+#!expect 64.000000
+#!expect 81.000000
+#!expect 100.000000

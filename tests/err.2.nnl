@@ -1,5 +1,9 @@
+#!name Can not reassign not existent variable
+
 # panic on change of non existent variable
 
 var x = 10;
 const y = 20;
 z = 33; # will panic
+
+#!expect Invalid reference to 'z': variable does not exist

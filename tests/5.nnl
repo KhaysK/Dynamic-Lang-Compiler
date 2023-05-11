@@ -1,3 +1,5 @@
+#!name Functions and recursion test
+
 # functions are objects too
 
 const g = func(a, b) do
@@ -31,3 +33,18 @@ end
 
 g(15, 23);
 f(6);
+
+#!expect 38.000000
+#!expect *******
+#!expect ******
+#!expect *****
+#!expect ****
+#!expect ***
+#!expect **
+#!expect *
+#!expect **
+#!expect ***
+#!expect ****
+#!expect *****
+#!expect ******
+#!expect *******

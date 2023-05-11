@@ -11,5 +11,8 @@ build_release:
 	cd build && cmake ..
 	make -C build/
 
+test: build_release
+	./scripts/test.sh build/compiler tests/
+
 clean:
 	rm -rf build parser.tab.?pp
