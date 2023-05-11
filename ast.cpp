@@ -637,12 +637,14 @@ namespace AST {
         }
 
         static_cast<Block*>(func->get_entry_point())->eval(mem);
+
         MemObject *ret = mem.get_object("$ret");
+        mem.drop_object("$ret");
+
         mem.exit_scope();
         mem.unmark_inside_func();
 
         return ret;
-
     }
 
     MemObject* Return::eval(MemoryKernel& mem) {

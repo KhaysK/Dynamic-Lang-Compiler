@@ -1,10 +1,29 @@
+#!name Recursive fibbonaci numbers
+
 const fib = func(n) do
-    if n <= 1
+    if n <= 2
     then
-        return 1;
+        return 1 + 0;
     else
         return fib(n - 1) + fib(n - 2);
     end
 end
 
-print fib(5);
+var i = 1;
+
+while i <= 10
+loop
+    print fib(i);
+    i = i + 1;
+end
+
+#!expect 1.000000
+#!expect 1.000000
+#!expect 2.000000
+#!expect 3.000000
+#!expect 5.000000
+#!expect 8.000000
+#!expect 13.000000
+#!expect 21.000000
+#!expect 34.000000
+#!expect 55.000000
