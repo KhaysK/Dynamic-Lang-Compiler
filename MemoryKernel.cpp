@@ -14,16 +14,6 @@
  **************************************************/
 
 /**
- * @brief Checks if name satisfies array element pattern
- *        (ARRAY_NAME@ARRAY_ELEMENT)
- *
- * @param name Name of element to check
- * @return true If matches array element pattern
- * @return false If does not match array element pattern
- */
-static bool is_array_element(std::string name);
-
-/**
  * @brief Extract array name from pattern
  *        (e.g. from arr@123 extracts arr)
  *
@@ -107,7 +97,7 @@ bool MemFunction::prep_mem(MemoryKernel &mem, std::vector<MemObject *> args) {
     if (all_elements.find(name) != all_elements.end()) return false;
     all_elements.insert(name);
 
-    if (is_array_element(arg->get_name())) {
+    if (MemoryKernel::is_array_element(arg->get_name())) {
       name = extract_array_name(arg->get_name());
       arr_appeared.insert(name);
     }
@@ -292,7 +282,7 @@ bool MemoryKernel::is_inside_func() const { return this->inside_func; }
  *         Local Functions Implementation
  **************************************************/
 
-static bool is_array_element(std::string name) {
+bool MemoryKernel::is_array_element(std::string name) {
   static std::regex pattern("..*@..*");
   return std::regex_match(name, pattern);
 }

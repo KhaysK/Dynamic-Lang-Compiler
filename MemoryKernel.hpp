@@ -244,6 +244,16 @@ class MemoryKernel {
    *        function at the moment
    */
   bool is_inside_func() const;
+
+  /**
+   * @brief Checks if name satisfies array element pattern
+   *        (ARRAY_NAME@ARRAY_ELEMENT)
+   *
+   * @param name Name of element to check
+   * @return true If matches array element pattern
+   * @return false If does not match array element pattern
+   */
+  static bool is_array_element(std::string name);
 };
 
 #endif  // MEMORY_KERNEL_HPP

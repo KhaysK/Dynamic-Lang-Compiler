@@ -7,4 +7,4 @@ arr[15] = 3.14;
 var kek = [12, 23, "lol"];
 
 print arr; # {1: "hi", 15: 3.14}
-
+print kek;

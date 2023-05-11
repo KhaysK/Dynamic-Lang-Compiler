@@ -41,14 +41,14 @@ namespace AST {
     MemObject* Assign::eval(MemoryKernel& mem){
         // if we try to change object which does not exist,
         // then panic and exit
-        if (mod.getMod() == "assign" && !mem.get_object(this->name)) {
+        if (mod.getMod() == "assign" && !mem.get_object(this->name) && !mem.is_array_element(this->name)) {
             std::cout << "Invalid reference to '" << this->name
                       << "': variable does not exist\n";
             exit(1);
         }
         
         MemObject* _eval = value.eval(mem);
-        std::cout<<this->name<<" - "<<_eval->get_type()<<" - "<<_eval->get_value()<<"\n";
+
         if(_eval->get_type() == OBJECT_ARRAY){
             for (int i = 0; i < std::stoi(_eval->get_value()); i++)
             {
@@ -108,15 +108,18 @@ namespace AST {
     }
 
     MemObject* Print::eval(MemoryKernel& mem) {
-        std::cout<<left.eval(mem)->get_type()<<" - "<<left.eval(mem)->get_value()<<"\n";
         if(left.eval(mem)->get_type() == OBJECT_ARRAY){
-            std::cout<< left.eval(mem)->get_value()<<" ";
-            for(int i = 0; i < std::stoi(left.eval(mem)->get_value()); i++){
-                std::string name = left.eval(mem)->get_name() + "@" + std::to_string(i);
-                MemObject* item = mem.get_object(name);
-                std::cout<<item->get_value()<<" , ";
+            std::vector<MemObject *> arr_elements = mem.extract_array(left.eval(mem)->get_name());
+            for(int i = 0; i < arr_elements.size(); i++){
+                if(arr_elements[i]->get_type() == OBJECT_STRING)
+                    std::cout<<'"'<<arr_elements[i]->get_value()<<'"';
+                else
+                    std::cout<<arr_elements[i]->get_value();
+                    
+                if(i != arr_elements.size() - 1) 
+                    std::cout<<", ";
+                else std::cout<<"\n";
             }
-            std::cout<<"\n";
         }else
             std::cout<<left.eval(mem)->get_value()<<"\n";
         return new MemObject(OBJECT_NULL, "", "null");
