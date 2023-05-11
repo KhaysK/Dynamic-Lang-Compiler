@@ -1,5 +1,5 @@
 all: build/Makefile
-	make -C build/
+	cd build && cmake --build . -j $(nproc)
 
 build/Makefile:
 	mkdir -p build
@@ -8,8 +8,7 @@ build/Makefile:
 build_release:
 	rm -rf build
 	mkdir -p build
-	cd build && cmake ..
-	make -C build/
+	cd build && cmake .. && cmake --build . -j $(nproc)
 
 test: build_release | quick_test
 	
