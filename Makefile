@@ -11,7 +11,9 @@ build_release:
 	cd build && cmake ..
 	make -C build/
 
-test: build_release
+test: build_release | quick_test
+	
+quick_test:
 	./scripts/test.sh build/compiler tests/
 
 clean:
