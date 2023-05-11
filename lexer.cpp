@@ -597,7 +597,9 @@ int main(int argc, char *argv[]) {
     }
     input = "var _G;\n" + input;
     
+#ifdef DEBUG
     cout << input << '\n';
+#endif /* DEBUG */
 
     file.close();
 
@@ -608,7 +610,10 @@ int main(int argc, char *argv[]) {
     yy::parser p(&ast_root);
     p.parse();
 
+#ifdef DEBUG
     cout << ast_root->str() << '\n';
+#endif /* DEBUG */
+
     MemoryKernel mem;
     ast_root->eval(mem);
     return 0;
