@@ -21,6 +21,7 @@ enum ObjectType : int {
   OBJECT_BOOL,
   OBJECT_FUNC,
   OBJECT_NULL,
+  OBJECT_ARRAY,
 };
 
 inline std::string ObjectTypeStr(ObjectType type) {

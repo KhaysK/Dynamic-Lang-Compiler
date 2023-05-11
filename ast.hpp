@@ -589,6 +589,7 @@ namespace AST {
     public:
         ArrayEl(ASTNode &l, ASTNode &r) :
                 BinOp(std::string("ArrElem"),  l, r) {};
+        MemObject* eval(MemoryKernel& mem) override;
     };
 
     /**
@@ -598,15 +599,16 @@ namespace AST {
      * Хранит в себе вектор этих элементов массива
     */
     class ArrayDecl : public ASTNode {
-        std::vector<ASTNode*> params;
+        std::vector<ASTNode*> params; 
     public:
-        ArrayDecl() {};
+        ArrayDecl() {}; 
         void flat(Block* block) {
             for (auto &i : block->getNodes()) {
                 params.push_back(i);
             }
         }
         void json(std::ostream& out, AST_print_context& mem) override;
+        MemObject* eval(MemoryKernel& mem) override;
     };
 
     // Tuples
@@ -621,6 +623,7 @@ namespace AST {
     public:
         TupleEl(ASTNode &l, ASTNode &r) :
                 BinOp(std::string("TuplElem"),  l, r) {};
+        // MemObject* eval(MemoryKernel& mem) override;
     };
 
     /**
@@ -638,6 +641,7 @@ namespace AST {
             }
         }
         void json(std::ostream& out, AST_print_context& mem) override; 
+        // MemObject* eval(MemoryKernel& mem) override;
     };
 }
 #endif /* AST_HPP */

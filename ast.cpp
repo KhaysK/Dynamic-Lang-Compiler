@@ -46,10 +46,21 @@ namespace AST {
                       << "': variable does not exist\n";
             exit(1);
         }
-
-        MemObject* _eval = value.eval(mem);
         
-        if (_eval->get_type() != OBJECT_FUNC) {
+        MemObject* _eval = value.eval(mem);
+        std::cout<<this->name<<" - "<<_eval->get_type()<<" - "<<_eval->get_value()<<"\n";
+        if(_eval->get_type() == OBJECT_ARRAY){
+            for (int i = 0; i < std::stoi(_eval->get_value()); i++)
+            {
+                std::string name = "$arr@" + std::to_string(i);
+                MemObject* item = mem.get_object(name);
+                std::string new_name = this->name + "@" + std::to_string(i);
+                mem.put_object(new MemObject(item->get_type(), new_name, item->get_value()));
+                mem.drop_object(name);
+            }
+            mem.put_object(new MemObject(_eval->get_type(), this->name, _eval->get_value()));
+        }
+        else if (_eval->get_type() != OBJECT_FUNC) {
             mem.put_object(new MemObject(_eval->get_type(), this->name, _eval->get_value()));
         } else {
             MemFunction *_eval_f = dynamic_cast<MemFunction*>(_eval);
@@ -92,7 +103,17 @@ namespace AST {
     }
 
     MemObject* Print::eval(MemoryKernel& mem) {
-        std::cout<<left.eval(mem)->get_value()<<"\n";
+        std::cout<<left.eval(mem)->get_type()<<" - "<<left.eval(mem)->get_value()<<"\n";
+        if(left.eval(mem)->get_type() == OBJECT_ARRAY){
+            std::cout<< left.eval(mem)->get_value()<<" ";
+            for(int i = 0; i < std::stoi(left.eval(mem)->get_value()); i++){
+                std::string name = left.eval(mem)->get_name() + "@" + std::to_string(i);
+                MemObject* item = mem.get_object(name);
+                std::cout<<item->get_value()<<" , ";
+            }
+            std::cout<<"\n";
+        }else
+            std::cout<<left.eval(mem)->get_value()<<"\n";
         return new MemObject(OBJECT_NULL, "", "null");
     }
 
@@ -607,6 +628,43 @@ namespace AST {
         return new MemObject(OBJECT_NULL, "", "null");
 
     }
+
+    MemObject* ArrayEl::eval(MemoryKernel& mem){
+        std::string name = left_.eval(mem)->get_name() + "@" + left_.eval(mem)->get_value();
+        
+        MemObject* arr = mem.get_object(left_.eval(mem)->get_name());
+        if(std::stoi(left_.eval(mem)->get_value()) > std::stoi(arr->get_value())){
+            arr->set_value(left_.eval(mem)->get_value());
+            mem.put_object(arr);
+        }
+            
+        return mem.get_object(name);
+    }
+
+    MemObject* ArrayDecl::eval(MemoryKernel& mem){
+        for (int i = 0; i < params.size(); i++)
+        {
+            MemObject* item = params[i]->eval(mem);
+            std::string name = "$arr@" + std::to_string(i);
+            mem.put_object(new MemObject(item->get_type(), name, item->get_value()));
+        }
+        return new MemObject(OBJECT_ARRAY, "", std::to_string(params.size()));
+    }
+
+    // MemObject* TupleEl::eval(MemoryKernel& mem){
+    //     std::string name = left_.eval(mem)->get_name() + "@" + left_.eval(mem)->get_value();
+    //     return mem.get_object(name);
+    // }
+
+    // MemObject* TupleDecl::eval(MemoryKernel& mem){
+    //     for (int i = 0; i < params.size(); i++)
+    //     {
+    //         MemObject* item = params[i]->eval(mem);
+    //         std::string name = "$arr@" + std::to_string(i);
+    //         mem.put_object(new MemObject(item->get_type(), name, item->get_value()));
+    //     }
+    //     return new MemObject(OBJECT_ARRAY, "", std::to_string(params.size()));
+    // }
 
     void ASTNode::json_indent(std::ostream& out, AST_print_context& ctx) {
         if (ctx.indent_ > 0) {
