@@ -676,9 +676,15 @@ namespace AST {
     }
 
     MemObject* TupleEl::eval(MemoryKernel& mem){
-        std::string name = left_.eval(mem)->get_value() + "@" + right_.eval(mem)->get_value();
-        
-        return mem.get_object(name);
+        std::string name;
+        if(right_.eval(mem)->get_type() == OBJECT_NUMBER){
+            std::vector<MemObject *> elems = mem.extract_array(left_.eval(mem)->get_value());
+            int index = std::stoi(right_.eval(mem)->get_value());
+            return elems[index - 1];
+        }else{
+            name = left_.eval(mem)->get_value() + "@" + right_.eval(mem)->get_value();
+            return mem.get_object(name);
+        }
     }
 
     MemObject* TupleDecl::eval(MemoryKernel& mem){
