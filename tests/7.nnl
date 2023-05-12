@@ -2,7 +2,7 @@
 #!name Tuples demonstration
 
 var t = {a=10, b=20};
-
+t.a = 20;
 print t.a + 10; 
 
 print t; 
@@ -11,7 +11,7 @@ print t;
 print t.1; # will print t.a value
 print t.2; # will print t.b value
 
-#!expect 20.000000
-#!expect 10, 20
-#!expect 10
+#!expect 30.000000
+#!expect 20, 20
+#!expect 20
 #!expect 20
