@@ -1,12 +1,18 @@
 # tuples behave like structures
+#!name Tuples demonstration
 
 var t = {a=10, b=20};
-t.a = 10;
-print t.a; # {a=20, b=20}
+t.a = 25;
 
-# to change tuple structure we should add new tuple to it
-print t; # {a=30, b=20, c=30}
+print t.a + 10; 
+
+print t; 
 
 # we can access tuple elements by order (starting from 1)
 print t.1; # will print t.a value
 print t.2; # will print t.b value
+
+#!expect 20.000000
+#!expect 10, 20
+#!expect 10
+#!expect 20

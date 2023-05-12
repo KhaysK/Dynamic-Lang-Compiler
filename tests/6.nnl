@@ -1,10 +1,19 @@
 # arrays behave like `real` associative array with integers as keys
 # also arrays are indexed starting from 1
+#!name Arrays demonstration
 
 var arr = [];
 arr[1] = "hi";
 arr[15] = 3.14;
-var kek = [12, 23, "lol"];
+var kek = [12, arr[15], "lol"];
+
+print arr[1];
+print arr[15] + 5;
 
 print arr; # {1: "hi", 15: 3.14}
 print kek;
+
+#!expect hi
+#!expect 8.140000
+#!expect "hi", 3.14
+#!expect 12, 3.14, "lol"
