@@ -2,7 +2,6 @@
 #!name Tuples demonstration
 
 var t = {a=10, b=20};
-t.a = 25;
 
 print t.a + 10; 
 
