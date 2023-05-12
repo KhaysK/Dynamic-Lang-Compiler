@@ -191,7 +191,7 @@ assignment_part
 	}
 	| IDENTIFIER LBRACKET NUMBER RBRACKET ASSIGN conditional_expression {
 		AST::AssignMod* mod = new AST::AssignMod("assign");
-		$$ = new AST::Assign(*mod, $1 + "@" + $3,*$6);
+		$$ = new AST::Assign(*mod, $1 + "@" + $3, *$6);
 	}
 	;
 
@@ -205,12 +205,12 @@ assignment_value
 
 tuple_element
 	: IDENTIFIER DOT_OP IDENTIFIER {
-		AST::Ident* ident = new AST::Ident($1); 
-		AST::Ident* idx = new AST::Ident($3);
+		AST::StringConst* ident = new AST::StringConst($1); 
+		AST::StringConst* idx = new AST::StringConst($3);
 		$$ = new AST::TupleEl(*ident, *idx);
 	}
 	| IDENTIFIER DOT_OP NUMBER {
-		AST::Ident* ident = new AST::Ident($1); 
+		AST::StringConst* ident = new AST::StringConst($1); 
 		AST::NumberConst* idx = new AST::NumberConst($3);
 		$$ = new AST::TupleEl(*ident, *idx);
 	}
