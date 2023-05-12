@@ -51,11 +51,11 @@ namespace AST {
 
         if(_eval->get_type() == OBJECT_ARRAY){
 
-            std::vector<MemObject *> elements = mem.extract_array("arr"); 
+            std::vector<MemObject *> elements = mem.extract_array("_garr"); 
             for (int i = 0; i < std::stoi(_eval->get_value()); i++)
             {
                 std::string old_name = elements[i]->get_name();
-                std::string global_arr = "arr@";
+                std::string global_arr = "_garr@";
                 size_t pos = old_name.find(global_arr);
                 if (pos != std::string::npos) {
                     old_name.replace(pos, global_arr.length(), "");
@@ -661,7 +661,7 @@ namespace AST {
 
     MemObject* ArrayEl::eval(MemoryKernel& mem){
         std::string name = left_.eval(mem)->get_name() + "@" + right_.eval(mem)->get_value();
-            
+        std::cout<<mem.get_object("arr@3")<<"\n";
         return mem.get_object(name);
     }
 
@@ -669,7 +669,7 @@ namespace AST {
         for (int i = 0; i < params.size(); i++)
         {
             MemObject* item = params[i]->eval(mem);
-            std::string name = "arr@" + std::to_string(i);
+            std::string name = "_garr@" + std::to_string(i);
             mem.put_object(new MemObject(item->get_type(), name, item->get_value()));
         }
         return new MemObject(OBJECT_ARRAY, "", std::to_string(params.size()));
@@ -691,7 +691,7 @@ namespace AST {
         for (int i = 0; i < params.size(); i++)
         {
             Assign* tupleElem = dynamic_cast<Assign*>(params[i]);
-            tupleElem->setName("arr@" + tupleElem->getName());
+            tupleElem->setName("_garr@" + tupleElem->getName());
             params[i]->eval(mem);
         }
         return new MemObject(OBJECT_ARRAY, "", std::to_string(params.size()));
