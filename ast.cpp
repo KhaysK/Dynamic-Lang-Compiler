@@ -47,6 +47,13 @@ namespace AST {
             exit(1);
         }
         
+        // can not reassign const!
+        if (mod.getMod() == "assign" && mem.get_object(this->name) && !mem.get_object(this->name)->is_writable()){
+            std::cout << "Can not reassign '" << this->name << "'"
+                      << ": variable is not writable\n";
+            exit(1);
+        }
+
         MemObject* _eval = value.eval(mem);
 
         if(_eval->get_type() == OBJECT_ARRAY){
@@ -67,7 +74,9 @@ namespace AST {
             mem.put_object(new MemObject(_eval->get_type(), this->name, _eval->get_value()));
         }
         else if (_eval->get_type() != OBJECT_FUNC) {
-            mem.put_object(new MemObject(_eval->get_type(), this->name, _eval->get_value()));
+            MemObject *p = new MemObject(_eval->get_type(), this->name, _eval->get_value());
+            if (mod.getMod() == "const") p->make_const();
+            mem.put_object(p);
         } else {
             MemFunction *_eval_f = dynamic_cast<MemFunction*>(_eval);
             MemFunction *to_put_f = new MemFunction(this->name,
@@ -661,7 +670,6 @@ namespace AST {
 
     MemObject* ArrayEl::eval(MemoryKernel& mem){
         std::string name = left_.eval(mem)->get_name() + "@" + right_.eval(mem)->get_value();
-        std::cout<<mem.get_object("arr@3")<<"\n";
         return mem.get_object(name);
     }
 

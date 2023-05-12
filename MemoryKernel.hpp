@@ -43,6 +43,7 @@ class MemObject {
   ObjectType type;
   std::string name;
   std::string value;
+  bool writable;
 
   // number of times object was used by other objects
   unsigned int num_references;
@@ -58,10 +59,12 @@ class MemObject {
   std::string get_name() const;
   std::string get_value() const;
   unsigned int count_references() const;
+  bool is_writable() const;
 
   // setters
   void set_type(ObjectType type);
   void set_value(std::string value);
+  void make_const();
 
   // increment number of references
   // (needed to show warning if object was not used)

@@ -1,0 +1,10 @@
+#!name Protect const from writing
+
+var a = 10, b = 20;
+a = 0;
+b = 0;
+
+const c = 30;
+c = 0;
+
+#!expect Can not reassign 'c': variable is not writable

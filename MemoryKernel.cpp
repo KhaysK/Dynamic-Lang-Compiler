@@ -29,7 +29,7 @@ static std::string extract_array_name(std::string name);
  **************************************************/
 
 MemObject::MemObject(ObjectType type, std::string name, std::string value)
-    : type(type), name(name), value(value), num_references(0){};
+    : type(type), name(name), value(value), num_references(0), writable(true) {};
 
 MemObject::~MemObject() {
   static std::fstream out;
@@ -53,9 +53,13 @@ unsigned int MemObject::count_references() const {
   return this->num_references;
 }
 
+bool MemObject::is_writable() const { return this->writable; }
+
 void MemObject::set_type(ObjectType type) { this->type = type; }
 
 void MemObject::set_value(std::string value) { this->value = value; }
+
+void MemObject::make_const() {this->writable = false;}
 
 void MemObject::ref_inc() { this->num_references++; }
 
