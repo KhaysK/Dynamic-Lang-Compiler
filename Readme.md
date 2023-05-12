@@ -8,7 +8,7 @@
 
 - Objects can be mutable (`var`) and literal (`const`)
 
-- Primitive types: `int`, `real`,  `bool`, `string`
+- Primitive types: `number`,  `bool`, `string`
 
 - User-defined types: `array`, `tuple`, `func`
 
@@ -32,10 +32,6 @@
    # assign multiple variables in one line
    var a = 30, b = false;
    
-   # can create variable via expression
-   var g = 10, h = 20;
-   var j = g * h / 2;
-   
    # initialize empty variable (it has special type `null`)
    var c; # c is null
    
@@ -48,7 +44,7 @@
    # can check for null
    var isYNull = (y is null); # isYNull = false
    ```
-
+   
 2. I/O
 
    ```nnlang
@@ -94,17 +90,20 @@
    ```nnlang
    # while loops
    var t = 0;
-   while t < 10
+   while t <= 10
    loop
-   	print t
-   	t += 1
+   	print t * t;
+   	t = t + 1;
    end
    
-   # for loop
-   for var i = 0; i < 10; i += 1
-   loop
-   	print i * i
+   # for_each on array elements
+   const arr = [2 + 2, 5.5];
+   
+   const f = func(i, val) do
+       print "[" + i + "] " + val + " * " + val + " = " + (val * val);
    end
+   
+   for_each(arr, f);
    ```
 
 5. functions
@@ -112,14 +111,13 @@
    ```nlang
    # functions are objects too
    
-   var f = func(a, b) do
-   	var c = a + b;
-   	return c;
+   const g = func(a, b) do
+     return a + b;
    end
    
    print f(10, 20) # 30
    ```
-
+   
 6. arrays
 
    ```nnlang
@@ -130,8 +128,7 @@
    arr[1] = "hi";
    arr[15] = 3.14;
    
-   print arr; # {1: "hi", 15: 3.14}
-   
+   print arr; # "hi", 3.14
    ```
 
 7.  tuples
@@ -140,17 +137,11 @@
    # tuples behave like structures
    
    var t = {a=10, b=20};
-   t.a += 10;
-   print t; # {a=20, b=20}
-   
-   # to change tuple structure we should add new tuple to it
-   t += {a=10, c=30};
-   print t; # {a=30, b=20, c=30}
+   print t; # {a=10, b=20}
    
    # we can access tuple elements by order (starting from 1)
    print t.1; # will print t.a value
    print t.2; # will print t.b value
-   print t.3; # will print t.c value
    ```
-
+   
    
