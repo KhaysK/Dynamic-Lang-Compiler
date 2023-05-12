@@ -1,0 +1,5 @@
+#!name Arithmetical expression
+
+print 6 * (5 - 1) / 24 * (5 * 5);
+
+#!expect 25.000000
