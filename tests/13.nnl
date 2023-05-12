@@ -1,0 +1,16 @@
+#!name for_each demonstration
+
+const arr = [2 + 2, 5.5];
+arr[2] = arr[0] * 2;
+arr[100] = arr[2] * arr[1];
+
+const f = func(i, val) do
+    print "[" + i + "] " + val + " * " + val + " = " + (val * val);
+end
+
+for_each(arr, f);
+
+#!expect [0] 4.000000 * 4.000000 = 16.000000
+#!expect [1] 5.5 * 5.5 = 30.250000
+#!expect [2] 8.000000 * 8.000000 = 64.000000
+#!expect [100] 44.000000 * 44.000000 = 1936.000000

@@ -8,6 +8,7 @@ set(SOURCE_FILES
     lexer.cpp
     ast.cpp
     MemoryKernel.cpp
+    builtin.cpp
 )
 
 find_package(BISON)

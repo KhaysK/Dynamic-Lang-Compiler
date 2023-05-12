@@ -6,6 +6,7 @@
 
 #include "parser.tab.hpp"
 #include "ast.hpp"
+#include "builtin.hpp"
 
 enum TokenType : int {
     EOF_ = 0,
@@ -615,6 +616,8 @@ int main(int argc, char *argv[]) {
 #endif /* DEBUG */
 
     MemoryKernel mem;
+    BuiltinBlock::initialize_builtins(mem);
+    
     ast_root->eval(mem);
     return 0;
 }
